@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa do Santuário do Oráculo</title>
+<style>
+/* ==TEMA== padrão visual do site: preto, roxo e vinho, com véus roxos na diagonal. */
+:root {
+  --branco:#0d0b12; --branco-fundo:#050408; --cinza-claro:#1d1726; --cinza:#a79fb6; --preto:#ece7f4;
+  --roxo:#a16be6; --roxo-escuro:#d3b5ff; --vinho:#e0588f; --vinho-escuro:#ffc2d6;
+  --degrade:linear-gradient(120deg,#7136a8,#8b286c,#751b3d);
+  --sombra:0 4px 18px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display:none !important; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:var(--branco-fundo); color:var(--preto); min-height:100vh; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; padding:22px 16px 30px; }
+#cab { width:100%; max-width:1000px; background:var(--branco); padding:16px 24px; text-align:center; border-radius:12px 12px 0 0;
+  border-bottom:3px solid transparent; border-image:var(--degrade) 1; box-shadow:var(--sombra); }
+.selo { font-size:11px; font-weight:700; letter-spacing:.25em; color:var(--cinza); text-transform:uppercase; }
+h1 { color:var(--roxo-escuro); font-size:1.6rem; }
+.sub { color:var(--cinza); font-size:.95rem; max-width:40em; margin:2px auto 0; }
+.greca { display:none; }
+.hud { display:flex; gap:18px; font-size:1rem; align-items:center; flex-wrap:wrap; justify-content:center; color:var(--cinza); }
+.hud b { color:var(--roxo-escuro); font-variant-numeric:tabular-nums; }
+.pill { padding:3px 12px; border:1px solid var(--roxo); color:var(--roxo); border-radius:20px; font-size:.9rem; font-weight:700; background:var(--branco); }
+#aviso { min-height:1.4em; text-align:center; max-width:40em; line-height:1.4; color:var(--cinza); font-style:italic; }
+#aviso.ok { color:var(--roxo); font-style:normal; } #aviso.erro { color:var(--vinho); }
+#aviso.memorize { color:var(--vinho); font-style:normal; font-weight:700; }
+.dica { font-size:.85rem; color:var(--cinza); text-align:center; max-width:40em; }
+.rodape { width:100%; max-width:1000px; padding:16px; text-align:center; font-size:.8rem; color:var(--cinza); background:var(--branco);
+  border-top:3px solid transparent; border-image:var(--degrade) 1; }
+.acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:600; font-size:15px; padding:10px 22px; background:var(--degrade); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:.3s; }
+button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 18px rgba(161,107,230,.35); filter:brightness(1.08); }
+button:disabled { opacity:.45; cursor:default; }
+button.sec { background:var(--branco); color:var(--roxo-escuro); border:1px solid #34254a; }
+#vitoria, #viagem { position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,6,.9); padding:20px; z-index:6; }
+#vitoria.aberta, #viagem.aberta { display:grid; }
+.caixa { text-align:center; max-width:30em; padding:28px 26px; background:var(--branco); border-radius:12px; box-shadow:var(--sombra); border:1px solid #271c38; border-top:4px solid var(--roxo); color:var(--preto); }
+.caixa p.frase { color:var(--roxo-escuro); font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; line-height:1.35; margin:0 0 18px; }
+.caixa p.frase.derrota { color:var(--vinho); }
+::-webkit-scrollbar { width:9px; } ::-webkit-scrollbar-track { background:#0a0810; }
+::-webkit-scrollbar-thumb { background:var(--degrade); border-radius:10px; }
+::selection { background:var(--roxo); color:#fff; }
+/* ==FIM-TEMA== */
+
+.mundo { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:820px) { .mundo { grid-template-columns:1fr; } }
+.mapa { position:relative; container-type:inline-size; aspect-ratio:1000/1200; border:1px solid #2b2040; border-radius:12px; background:#07111d; box-shadow:var(--sombra); line-height:0; user-select:none; overflow:hidden; }
+.mapa > svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.rot { position:absolute; transform:translate(-50%,-50%); white-space:nowrap; padding:.35em .9em; font-weight:700; font-size:max(8.5px,1.7cqw); letter-spacing:.04em; text-transform:uppercase; line-height:1.25; color:var(--roxo-escuro); background:rgba(14,10,20,.92); border:1.5px solid var(--roxo); border-radius:6px; box-shadow:0 2px 10px rgba(33,29,37,.45); cursor:pointer; transition:.2s; }
+.rot:hover:not(:disabled), .rot:focus-visible { background:var(--degrade); color:#fff; border-color:transparent; transform:translate(-50%,-50%); filter:none; box-shadow:0 0 16px rgba(113,54,168,.7); }
+.rot.sel { border-color:var(--vinho); box-shadow:0 0 0 2px var(--vinho), 0 0 16px rgba(117,27,61,.5); }
+.rot.saida { animation:pisca 1.2s infinite alternate; }
+@keyframes pisca { from { box-shadow:0 0 3px rgba(139,40,108,.3), 0 2px 10px rgba(33,29,37,.45); } to { box-shadow:0 0 18px rgba(139,40,108,.95), 0 2px 10px rgba(33,29,37,.45); } }
+.pin { position:absolute; width:clamp(18px,2.7cqw,30px); height:clamp(18px,2.7cqw,30px); transform:translate(-50%,-50%); padding:0; border-radius:50%; border:2px solid var(--roxo); background:rgba(14,10,20,.92); cursor:pointer; line-height:1; font-size:clamp(9px,1.3cqw,14px); color:var(--roxo); display:grid; place-items:center; }
+.pin:hover:not(:disabled), .pin.sel { background:var(--roxo); color:#fff; transform:translate(-50%,-50%); box-shadow:0 0 14px rgba(113,54,168,.8); }
+.pin.visitado::after { content:"✓"; }
+.pin.aqui { width:clamp(26px,3.8cqw,40px); height:clamp(26px,3.8cqw,40px); background:var(--vinho); color:#fff; border-color:#fff; font-size:clamp(13px,1.9cqw,20px); animation:bate 1.6s infinite; }
+.pin.aqui::after { content:"⚑"; }
+@keyframes bate { 0%,100% { box-shadow:0 0 0 3px rgba(117,27,61,.35), 0 0 16px rgba(139,40,108,.7); } 50% { box-shadow:0 0 0 9px rgba(117,27,61,.1), 0 0 26px rgba(139,40,108,1); } }
+.painel { padding:20px; background:var(--branco); border:1px solid #271c38; border-radius:12px; box-shadow:var(--sombra); position:sticky; top:12px; line-height:1.55; }
+.painel .tipo { margin:0 0 2px; font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cinza); }
+.painel h2 { margin:0 0 8px; font-size:1.3rem; color:var(--roxo-escuro); }
+.painel p { margin:0 0 12px; font-size:.93rem; }
+.painel h3 { margin:14px 0 6px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--vinho); }
+.nota { padding:10px 12px; border-left:4px solid var(--vinho); background:#24111c; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--vinho-escuro); margin-bottom:12px; }
+.obs { padding:10px 12px; border-left:4px solid var(--roxo); background:#1a1228; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--roxo-escuro); margin-bottom:12px; }
+.saidas { display:flex; gap:8px; flex-wrap:wrap; }
+.saidas button, .painel .mover { padding:7px 14px; font-size:.82rem; }
+.painel .mover { width:100%; margin-top:6px; }
+.trilha { font-size:.8rem; color:var(--cinza); margin:12px 0 0; }
+.modo { display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--cinza); cursor:pointer; }
+.modo input { accent-color:var(--roxo); width:16px; height:16px; }
+#viagem .caixa { max-width:32em; }
+#viagem .frase { font-size:clamp(1.2rem,4vw,1.6rem); margin-bottom:12px; }
+#viagem p { margin:0 0 14px; }
+#relogio { font:bold clamp(2.6rem,10vw,4rem) ui-monospace,Consolas,monospace; color:var(--roxo-escuro); margin:6px 0 10px; font-variant-numeric:tabular-nums; }
+.barra { height:8px; border-radius:8px; background:var(--cinza-claro); margin:0 0 18px; overflow:hidden; }
+.barra i { display:block; height:100%; width:0; background:var(--degrade); }
+#viagem .botoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ===== VÉUS: linhas finas em degradê roxo cruzando o fundo na diagonal ===== */
+html { background:#050408; scroll-behavior:smooth; }
+body { background:transparent; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' viewBox='0 0 1600 1000'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%237136a8' stop-opacity='0'/><stop offset='.25' stop-color='%239a5ce0'/><stop offset='.55' stop-color='%238b286c'/><stop offset='.8' stop-color='%23b57cff'/><stop offset='1' stop-color='%237136a8' stop-opacity='0'/></linearGradient><linearGradient id='v' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%23b57cff' stop-opacity='0'/><stop offset='.5' stop-color='%237136a8'/><stop offset='1' stop-color='%238b286c' stop-opacity='0'/></linearGradient><filter id='b' x='-10%' y='-10%' width='120%' height='120%'><feGaussianBlur stdDeviation='9'/></filter></defs><g transform='rotate(-34 800 500) translate(0 -20) scale(1.5)'><g filter='url(%23b)' opacity='.22'><line x1='-900' x2='1900' y1='160' y2='160' stroke='url(%23v)' stroke-width='22'/><line x1='-900' x2='1900' y1='480' y2='480' stroke='url(%23v)' stroke-width='30'/><line x1='-900' x2='1900' y1='760' y2='760' stroke='url(%23v)' stroke-width='18'/></g><line x1='-900' x2='1900' y1='40' y2='40' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='130' y2='130' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.8'/><line x1='-900' x2='1900' y1='215' y2='215' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/><line x1='-900' x2='1900' y1='300' y2='300' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='372' y2='372' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.9'/><line x1='-900' x2='1900' y1='455' y2='455' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='520' y2='520' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.75'/><line x1='-900' x2='1900' y1='610' y2='610' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.4'/><line x1='-900' x2='1900' y1='690' y2='690' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.85'/><line x1='-900' x2='1900' y1='775' y2='775' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.55'/><line x1='-900' x2='1900' y1='850' y2='850' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='935' y2='935' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/></g></svg>") center/cover no-repeat; }
+body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(113,54,168,.16), transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(139,40,108,.12), transparent 55%); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid #b57cff; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+  <header id="cab">
+    <p class="selo">Ordem · Mapa dos Locais Sagrados</p>
+    <h1>O Santuário do Oráculo</h1>
+    <p class="sub">Clique em um local para ver o que há ali. Mova o grupo seguindo os caminhos marcados.</p>
+    <div class="greca"></div>
+  </header>
+
+  <div class="hud"><span>Grupo em <b id="onde"></b></span><span>Lugares visitados <b id="cont"></b></span></div>
+  <div id="aviso" aria-live="polite"></div>
+
+  <div class="mundo">
+    <div class="mapa" id="mapa">
+      <svg id="arte" viewBox="0 0 1000 1200" role="img" aria-label="Mapa ilustrado do santuário: Templo de Apolo, Templo de Atena, Praça Central, Templo Central, Estátua do Oráculo, Arquivo Perdido, Ruínas, Fenda Sombria e Portal"></svg>
+      <svg id="sobre" viewBox="0 0 1000 1200"></svg>
+    </div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </div>
+
+  <div class="acoes">
+    <label class="modo" hidden><input type="checkbox" id="modo"> Modo mestra (notas e mover para qualquer lugar)</label>
+    <button id="reiniciar" class="sec">Reiniciar mapa</button>
+  </div>
+  <p class="dica">O grupo começa no Portal. Os locais que brilham são as saídas do ponto onde o grupo está.</p>
+  <p class="rodape">Ordem Paranormal × Mitologia Grega</p>
+
+  <div id="viagem" role="dialog" aria-modal="true">
+    <div class="caixa">
+      <p class="frase" id="v-titulo"></p>
+      <p id="v-texto"></p>
+      <div id="relogio">02:00</div>
+      <div class="barra"><i id="v-barra"></i></div>
+      <div class="botoes"><button id="v-chegar">Chegar agora (mestra)</button><button id="v-cancelar" class="sec">Cancelar viagem (mestra)</button></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===== Ajustes fáceis de mexer =====
+  const INICIO = "portal";   // onde o grupo começa (chegada ao Mundo Antigo)
+  const OBS_AVENIDA = "";
+  // rot = onde fica a placa com o nome (x, y no mapa de 1000 x 1200); pin = ponto do local no cenário
+  const LUGARES = {
+    apolo: { nome: "Templo de Apolo", placa: "Templo de Apolo", rot: [498, 40], pin: [498, 128],
+      tipo: "Templo",
+      desc: "No alto da escadaria, o templo dourado brilha como se o sol nunca saísse dele. Estandartes azuis se movem sem vento.",
+      mestra: "" },
+    atena: { nome: "Templo de Atena", placa: "Templo de Atena", rot: [205, 345], pin: [249, 262],
+      tipo: "Templo",
+      desc: "O templo de telhado azul guarda um silêncio de biblioteca. Cada pilar tem inscrições em grego antigo, algumas riscadas por mãos apressadas.",
+      mestra: "" },
+    praca: { nome: "Praça Central", placa: "Praça Central", rot: [502, 352], pin: [502, 300],
+      tipo: "Ponto de encontro",
+      desc: "Um mosaico circular com uma pequena fonte no centro, cercado por tochas e estandartes. De qualquer ponto da praça se vê o caminho para todos os templos.",
+      mestra: "" },
+    central: { nome: "Templo Central", placa: "Templo Central", rot: [796, 345], pin: [758, 262],
+      tipo: "Templo principal",
+      desc: "Um templo de pedra escura e portas altas, onde cada passo ecoa mais do que deveria.",
+      mestra: "" },
+    estatua: { nome: "Estátua do Oráculo", placa: "Estátua do Oráculo", rot: [502, 592], pin: [502, 490],
+      tipo: "Monumento",
+      desc: "Uma mulher de manto, em mármore, segura uma tocha acesa que ninguém lembra de ter acendido. A água aos pés dela está parada demais.",
+      mestra: "" },
+    arquivo: { nome: "Arquivo Perdido", placa: "Arquivo Perdido", rot: [222, 690], pin: [222, 602],
+      tipo: "Ruínas",
+      desc: "Estantes tombadas e colunas quebradas guardam pergaminhos rasgados. Há pegadas frescas no pó e fragmentos de papel arrancados das prateleiras.",
+      mestra: "" },
+    ruinas: { nome: "Ruínas", placa: "Ruínas", rot: [776, 690], pin: [770, 610],
+      tipo: "Ruínas",
+      desc: "Colunas partidas e degraus cobertos de hera. Bons esconderijos, e bons lugares para ser surpreendido.",
+      mestra: "" },
+    fenda: { nome: "Fenda Sombria", placa: "Fenda Sombria", rot: [502, 893], pin: [506, 806],
+      tipo: "Área perigosa",
+      desc: "Uma cicatriz roxa rasga a rocha. O ar vibra, e as sombras se mexem fora de compasso com quem as projeta.",
+      mestra: "" },
+    portal: { nome: "Portal", placa: "Portal", rot: [502, 1112], pin: [502, 1030],
+      tipo: "Chegada do grupo ao Mundo Antigo",
+      desc: "Um arco de pedra antigo, com velas acesas dos dois lados. O redemoinho azul e violeta no centro é o caminho de volta ao mundo de hoje.",
+      mestra: "" }
+  };
+  // Caminhos (valem nos dois sentidos)
+  const ARESTAS = [
+    { a: "apolo", b: "praca" },
+    { a: "praca", b: "atena" },
+    { a: "praca", b: "central" },
+    { a: "praca", b: "estatua" },
+    { a: "estatua", b: "arquivo" },
+    { a: "estatua", b: "ruinas" },
+    { a: "estatua", b: "fenda" },
+    { a: "arquivo", b: "fenda" },
+    { a: "ruinas", b: "fenda" },
+    { a: "fenda", b: "portal" }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const W = 1000, H = 1200;
+  const pct = (v, t) => (v / t * 100) + "%";
+  const achar = (x, y) => ARESTAS.find((e) => (e.a === x && e.b === y) || (e.a === y && e.b === x));
+  const vizinhosDe = (id) => ARESTAS.filter((e) => e.a === id || e.b === id).map((e) => (e.a === id ? e.b : e.a));
+  let aqui, sel, visitados, trilha, viagem = null;
+
+  function falar(t, cls) { $("aviso").textContent = t; $("aviso").className = cls || ""; }
+  const mestra = () => false;
+  const ligados = (a, b) => !!achar(a, b);
+  const podeIr = (id) => !viagem && id !== aqui && (mestra() || ligados(aqui, id));
+
+  // ===== Arte do mapa =====
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const TERRA = "M0 0 L720 0 L800 60 L880 150 L960 250 L1000 420 L1000 900 L900 960 L790 990 L700 985 L696 1200 L306 1200 L300 985 L200 990 L90 960 L0 900 Z";
+
+  function templo(cx, cy, w, telhado, brilho) {   // frente de um templo grego
+    const n = Math.round(w / 15), x0 = cx - w / 2;
+    let s = `<ellipse cx="${cx}" cy="${cy + 32}" rx="${w / 2 + 14}" ry="9" fill="#000" fill-opacity=".4"/>`;
+    if (brilho) s += `<ellipse cx="${cx}" cy="${cy}" rx="${w}" ry="70" fill="url(#gHalo)"/>`;
+    s += `<polygon points="${x0 - 8},${cy - 16} ${x0 + w + 8},${cy - 16} ${x0 + w - 8},${cy - 44} ${x0 + 8},${cy - 44}" fill="${telhado}" stroke="#1a140a" stroke-width="2"/>`;
+    s += `<polygon points="${x0 - 6},${cy - 14} ${cx},${cy - 40} ${x0 + w + 6},${cy - 14}" fill="${brilho ? "url(#gOuro)" : "url(#gPedra)"}" stroke="#1a140a" stroke-width="2"/>`;
+    s += `<rect x="${x0}" y="${cy - 14}" width="${w}" height="40" fill="url(#gPedra)" stroke="#1a140a" stroke-width="2"/>`;
+    for (let i = 0; i < n; i++) s += `<rect x="${(x0 + 4 + i * (w - 8) / (n - 1) - 2.5).toFixed(1)}" y="${cy - 12}" width="5" height="36" fill="#f3e7bf" stroke="#4a3a18" stroke-width=".8"/>`;
+    s += `<rect x="${x0 - 6}" y="${cy + 26}" width="${w + 12}" height="6" fill="#b89646" stroke="#1a140a" stroke-width="1.5"/><rect x="${x0 - 12}" y="${cy + 32}" width="${w + 24}" height="5" fill="#8a7a52" stroke="#1a140a" stroke-width="1.2"/>`;
+    s += `<rect x="${cx - 4}" y="${cy + 4}" width="8" height="22" fill="#1a140a"/>`;
+    return s;
+  }
+  function cipreste(x, y, h) { return `<ellipse cx="${x}" cy="${y}" rx="${h * .17}" ry="${h}" fill="#0f2b19" stroke="#06150c" stroke-width="1"/><ellipse cx="${x - h * .05}" cy="${y - h * .1}" rx="${h * .08}" ry="${h * .7}" fill="#1c4a2a" fill-opacity=".7"/>`; }
+
+  function arte() {
+    const R = rng(23);
+    let s = `<defs>
+      <linearGradient id="gAgua" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1c31"/><stop offset="1" stop-color="#06101b"/></linearGradient>
+      <linearGradient id="gOuro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d680"/><stop offset="1" stop-color="#8a6d28"/></linearGradient>
+      <linearGradient id="gPedra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c690"/><stop offset="1" stop-color="#7d6a3c"/></linearGradient>
+      <linearGradient id="gCascata" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe6ff" stop-opacity=".9"/><stop offset="1" stop-color="#5b9fd6" stop-opacity=".5"/></linearGradient>
+      <radialGradient id="gHalo"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".75"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gPortal"><stop offset="0" stop-color="#ffffff"/><stop offset=".25" stop-color="#9ec9ff"/><stop offset=".6" stop-color="#5a2fd0" stop-opacity=".9"/><stop offset="1" stop-color="#5a2fd0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gFenda"><stop offset="0" stop-color="#c58cff" stop-opacity=".95"/><stop offset=".4" stop-color="#6a1fd0" stop-opacity=".55"/><stop offset="1" stop-color="#6a1fd0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gNevoa"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <filter id="rugoso" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="3" seed="9"/><feDisplacementMap in="SourceGraphic" scale="40"/></filter>
+      <filter id="brilha"><feGaussianBlur stdDeviation="3"/></filter>
+    </defs>`;
+    s += `<rect width="1000" height="1200" fill="url(#gAgua)"/>`;
+    for (let i = 0; i < 60; i++) { const x = 720 + R() * 280, y = R() * 260; if (y > 380 - x * .38 + 120 && x < 990) continue; s += `<path d="M${x} ${y} q9 -6 18 0 t18 0" fill="none" stroke="#5b8cc4" stroke-opacity=".25" stroke-width="1.5"/>`; }
+    for (let i = 0; i < 40; i++) { const x = R() * 1000, y = 1010 + R() * 190; if (x > 300 && x < 700) continue; s += `<path d="M${x} ${y} q9 -6 18 0 t18 0" fill="none" stroke="#5b8cc4" stroke-opacity=".2" stroke-width="1.5"/>`; }
+    // penhascos laterais e base
+    s += `<path d="M0 900 L90 960 L200 990 L300 985 L304 1060 L200 1070 L90 1020 L0 960Z" fill="#3a2c1b" stroke="#1a140a" stroke-width="2"/><path d="M1000 900 L900 960 L790 990 L700 985 L696 1060 L800 1070 L910 1020 L1000 960Z" fill="#3a2c1b" stroke="#1a140a" stroke-width="2"/>`;
+    for (let i = 0; i < 26; i++) { const x = 6 + R() * 290, y = 960 + R() * 70; s += `<line x1="${x}" y1="${y}" x2="${x + R() * 6 - 3}" y2="${y + 14 + R() * 20}" stroke="#1a140a" stroke-opacity=".5" stroke-width="2"/>`; const x2 = 704 + R() * 290; s += `<line x1="${x2}" y1="${y}" x2="${x2 + R() * 6 - 3}" y2="${y + 14 + R() * 20}" stroke="#1a140a" stroke-opacity=".5" stroke-width="2"/>`; }
+    // terra
+    s += `<path d="${TERRA}" fill="#1f2c17" stroke="#5a4528" stroke-width="10" stroke-linejoin="round"/><path d="${TERRA}" fill="none" stroke="#8a6d38" stroke-opacity=".5" stroke-width="2"/>`;
+    // manchas de relevo
+    for (let i = 0; i < 40; i++) { const x = 20 + R() * 960, y = 20 + R() * 940; s += `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="${30 + R() * 50}" ry="${14 + R() * 24}" fill="${R() < .5 ? "#2a3a1c" : "#18240f"}" fill-opacity=".55"/>`; }
+    // pedras do penhasco (esquerda e direita)
+    [[0, 330, 60, 420], [940, 400, 60, 440]].forEach(([x, y, w, h]) => { for (let i = 0; i < 9; i++) s += `<polygon points="${x + R() * w},${y + R() * h} ${x + R() * w + 26},${y + R() * h - 14} ${x + R() * w + 44},${y + R() * h + 18}" fill="#4a3a28" fill-opacity=".8" stroke="#1a140a" stroke-width="1"/>`; });
+    // mar visível no canto superior direito
+    s += `<path d="M720 0 L1000 0 L1000 250 L960 250 L880 150 L800 60Z" fill="url(#gAgua)" stroke="#5a4528" stroke-width="6"/>`;
+    // áreas livres de árvores
+    const livre = (x, y) => [[498, 150, 120, 110], [502, 300, 150, 90], [249, 262, 110, 70], [758, 262, 110, 70], [502, 480, 90, 120], [222, 600, 100, 80], [770, 612, 100, 80], [505, 812, 240, 130], [502, 1030, 100, 120], [502, 640, 70, 90], [370, 560, 160, 60], [640, 560, 160, 60], [310, 690, 100, 110], [700, 690, 100, 110], [502, 920, 40, 80]].some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1);
+    for (let i = 0; i < 520; i++) {
+      const x = 14 + R() * 975, y = 14 + R() * 960; if (livre(x, y)) continue;
+      if (y < 260 - 0 && x > 880 - y * .7 + 0 && x > 800) continue;
+      if (x > 720 && y < 150 + (x - 720) * .5 && x + (260 - y) * .45 > 900) continue;
+      const r = 6 + R() * 9, c = ["#17391f", "#1f4a2a", "#2a5e34", "#143018"][Math.floor(R() * 4)];
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${c}" stroke="#0a1f10" stroke-width=".8"/>`;
+    }
+    // escadaria do templo de Apolo até a praça
+    s += `<polygon points="470,168 526,168 548,238 448,238" fill="#b9a572" stroke="#5a4a28" stroke-width="2"/>`;
+    for (let k = 0; k < 7; k++) s += `<line x1="${470 - k * 3.2}" y1="${172 + k * 9.5}" x2="${526 + k * 3.2}" y2="${172 + k * 9.5}" stroke="#6f5d34" stroke-width="2"/>`;
+    // praça central
+    s += `<ellipse cx="502" cy="300" rx="132" ry="74" fill="#a89464" stroke="#e5c76b" stroke-width="3"/><ellipse cx="502" cy="300" rx="104" ry="57" fill="none" stroke="#6f5d34" stroke-width="2" stroke-dasharray="5 5"/><ellipse cx="502" cy="300" rx="70" ry="38" fill="none" stroke="#6f5d34" stroke-width="2"/>`;
+    s += `<g stroke="#6f5d34" stroke-width="2"><line x1="502" y1="226" x2="502" y2="374"/><line x1="370" y1="300" x2="634" y2="300"/></g><ellipse cx="502" cy="300" rx="26" ry="14" fill="#2c6e9e" stroke="#e5c76b" stroke-width="3"/><ellipse cx="502" cy="298" rx="9" ry="5" fill="#b9e3ff"/>`;
+    [[392, 270], [612, 270], [392, 334], [612, 334]].forEach(([x, y]) => { s += `<rect x="${x - 2}" y="${y - 16}" width="4" height="16" fill="#3a2f18"/><ellipse cx="${x}" cy="${y - 20}" rx="4" ry="7" fill="#ffb347"><animate attributeName="ry" values="7;9;6;7" dur="${(1 + R()).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`; });
+    // caminhos laterais da praça
+    s += `<path d="M376 292 Q 340 300 300 280 M628 292 Q 664 300 706 280" fill="none" stroke="#a89464" stroke-width="22" stroke-linecap="round"/>`;
+    // escadaria até a estátua
+    s += `<polygon points="474,368 530,368 546,436 458,436" fill="#b9a572" stroke="#5a4a28" stroke-width="2"/>`;
+    for (let k = 0; k < 6; k++) s += `<line x1="${474 - k * 2.6}" y1="${373 + k * 10.5}" x2="${530 + k * 2.6}" y2="${373 + k * 10.5}" stroke="#6f5d34" stroke-width="2"/>`;
+    // trilhas de terra
+    const trilha = (d) => `<path d="${d}" fill="none" stroke="#4a3920" stroke-width="18" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#8a7248" stroke-width="11" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b9a572" stroke-opacity=".5" stroke-width="2" stroke-dasharray="6 9" stroke-linecap="round"/>`;
+    s += trilha("M458 520 Q 330 540 232 594") + trilha("M546 520 Q 680 540 764 604") + trilha("M502 560 L 504 760") + trilha("M236 640 Q 290 740 392 790") + trilha("M764 650 Q 716 740 620 790");
+    // praça da estátua
+    s += `<ellipse cx="502" cy="512" rx="76" ry="34" fill="#a89464" stroke="#e5c76b" stroke-width="2.5"/><ellipse cx="502" cy="514" rx="58" ry="25" fill="#2c6e9e" fill-opacity=".8" stroke="#9ed2ff" stroke-width="2"/><ellipse cx="502" cy="514" rx="40" ry="16" fill="none" stroke="#b9e3ff" stroke-opacity=".6" stroke-width="1.5"/>`;
+    // estátua do Oráculo
+    s += `<rect x="478" y="494" width="48" height="22" fill="url(#gPedra)" stroke="#1a140a" stroke-width="2"/><path d="M502 436 q-26 22 -20 60 h40 q6 -38 -20 -60z" fill="#e4dcc4" stroke="#6f6a58" stroke-width="2"/><circle cx="502" cy="432" r="8" fill="#e4dcc4" stroke="#6f6a58" stroke-width="2"/><path d="M522 456 L538 424" stroke="#e4dcc4" stroke-width="6" stroke-linecap="round"/><ellipse cx="539" cy="414" rx="14" ry="20" fill="url(#gHalo)"/><ellipse cx="539" cy="416" rx="5" ry="10" fill="#ffb347"><animate attributeName="ry" values="10;13;9;10" dur="1.2s" repeatCount="indefinite"/></ellipse>`;
+    // Fenda Sombria
+    s += `<ellipse cx="505" cy="816" rx="215" ry="106" fill="#07050a" filter="url(#rugoso)"/><ellipse cx="505" cy="810" rx="190" ry="90" fill="url(#gFenda)" opacity=".55"/>`;
+    for (let i = 0; i < 16; i++) { const a = R() * 6.28, d = 60 + R() * 150, x = 505 + Math.cos(a) * d, y = 816 + Math.sin(a) * d * .5; s += `<polygon points="${x},${y} ${x + 16 + R() * 14},${y + 6} ${x + 8},${y + 18 + R() * 10}" fill="#15111a" stroke="#2c2236" stroke-width="1.2"/>`; }
+    const fenda = "M440 806 L470 788 L486 808 L506 780 L522 806 L540 790 L568 812 L544 826 L520 818 L500 838 L482 822 L458 830 Z";
+    s += `<path d="${fenda}" fill="#b57cff" filter="url(#brilha)" opacity=".9"/><path d="${fenda}" fill="#f0d8ff" stroke="#6a1fd0" stroke-width="2"/><ellipse cx="505" cy="808" rx="26" ry="14" fill="#fff"><animate attributeName="opacity" values=".6;1;.6" dur="2.4s" repeatCount="indefinite"/></ellipse>`;
+    for (let i = 0; i < 26; i++) { const x = 400 + R() * 210, y = 740 + R() * 140; s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1 + R() * 2).toFixed(1)}" fill="#d9a6ff" fill-opacity=".8"><animate attributeName="cy" values="${y.toFixed(1)};${(y - 22).toFixed(1)};${y.toFixed(1)}" dur="${(2 + R() * 3).toFixed(1)}s" repeatCount="indefinite"/></circle>`; }
+    // ponte e portal
+    s += `<path d="M502 880 L502 1200" stroke="#3a2f18" stroke-width="44"/><path d="M502 880 L502 1200" stroke="#a89464" stroke-width="34"/><path d="M502 880 L502 1200" stroke="#6f5d34" stroke-width="2" stroke-dasharray="8 10"/>`;
+    // cachoeiras
+    [[332, 1], [672, 1]].forEach(([x]) => {
+      s += `<rect x="${x - 20}" y="985" width="40" height="215" fill="url(#gCascata)"/>`;
+      for (let k = 0; k < 7; k++) s += `<line x1="${x - 16 + k * 5.4}" y1="990" x2="${x - 16 + k * 5.4 + R() * 3}" y2="1190" stroke="#fff" stroke-opacity=".5" stroke-width="1.6"/>`;
+      s += `<ellipse cx="${x}" cy="1190" rx="70" ry="22" fill="url(#gNevoa)"/><ellipse cx="${x}" cy="990" rx="30" ry="6" fill="#bfe6ff" fill-opacity=".5"/>`;
+    });
+    s += `<ellipse cx="502" cy="1195" rx="130" ry="14" fill="url(#gNevoa)"/>`;
+    s += `<ellipse cx="502" cy="1040" rx="80" ry="12" fill="#000" fill-opacity=".35"/><rect x="458" y="1050" width="88" height="8" fill="url(#gPedra)" stroke="#1a140a" stroke-width="1.5"/><rect x="450" y="1058" width="104" height="8" fill="#8a7a52" stroke="#1a140a" stroke-width="1.5"/>`;
+    s += `<ellipse cx="502" cy="1010" rx="60" ry="60" fill="url(#gPortal)" opacity=".5"><animate attributeName="rx" values="54;66;54" dur="3s" repeatCount="indefinite"/></ellipse><path d="M472 1052 V1000 a30 30 0 0 1 60 0 V1052" fill="url(#gPortal)" stroke="#b89646" stroke-width="12" stroke-linejoin="round"/><path d="M472 1052 V1000 a30 30 0 0 1 60 0 V1052" fill="none" stroke="#2a2010" stroke-width="2"/><path d="M502 984 a14 20 0 1 1 -3 34 a8 12 0 1 0 3 -22" fill="none" stroke="#e8f2ff" stroke-width="2.5"/>`;
+    [[452, 1046], [552, 1046]].forEach(([x, y]) => { s += `<rect x="${x - 5}" y="${y - 6}" width="10" height="12" fill="#e4dcc4" stroke="#1a140a"/><ellipse cx="${x}" cy="${y - 12}" rx="4" ry="8" fill="#ffb347"><animate attributeName="ry" values="8;10;7;8" dur="1.1s" repeatCount="indefinite"/></ellipse><circle cx="${x}" cy="${y - 12}" r="14" fill="url(#gHalo)"/>`; });
+    // cipreste e templos
+    [[385, 140, 34], [412, 120, 40], [584, 120, 40], [612, 140, 34], [360, 175, 26], [640, 175, 26], [150, 235, 30], [346, 290, 28], [650, 290, 28], [855, 235, 30], [440, 372, 24], [564, 372, 24]].forEach(([x, y, h]) => { s += cipreste(x, y, h); });
+    s += templo(498, 92, 124, "#b8962e", true);
+    s += templo(249, 262, 120, "#33527f", false) + templo(758, 262, 120, "#2e2d33", false);
+    [[196, 226], [304, 226]].forEach(([x, y]) => { s += `<rect x="${x - 4}" y="${y}" width="8" height="26" fill="#2a4a7a" stroke="#0e1a2e"/>`; });
+    [[706, 226], [810, 226]].forEach(([x, y]) => { s += `<rect x="${x - 4}" y="${y}" width="8" height="26" fill="#2a4a7a" stroke="#0e1a2e"/>`; });
+    // Arquivo Perdido (biblioteca em ruínas)
+    s += `<g><ellipse cx="222" cy="640" rx="92" ry="12" fill="#000" fill-opacity=".4"/><rect x="150" y="568" width="144" height="70" fill="#3a2f1c" stroke="#1a140a" stroke-width="2"/><polygon points="150,568 170,552 186,562 206,548 230,560 250,550 294,568" fill="#2b2316" stroke="#1a140a" stroke-width="1.5"/>`;
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) s += `<rect x="${156 + c * 17}" y="${572 + r * 21}" width="${5 + (c % 3)}" height="16" fill="${["#8a3a2a", "#3a5a8a", "#8a6d28", "#5a3a7a"][(r + c) % 4]}" stroke="#1a140a" stroke-width=".6"/>`;
+    s += `<rect x="150" y="634" width="144" height="5" fill="#8a6d28"/>`;
+    [[144, 610, 38], [300, 600, 48], [278, 648, 22]].forEach(([x, y, h]) => { s += `<polygon points="${x - 6},${y + 38} ${x - 6},${y - h + 38} ${x - 2},${y - h + 30} ${x + 3},${y - h + 36} ${x + 7},${y - h + 28} ${x + 7},${y + 38}" fill="#cdbf92" stroke="#4a3a18" stroke-width="1.2"/>`; });
+    s += `<circle cx="196" cy="618" r="4" fill="#d9a6ff" fill-opacity=".7"/></g>`;
+    // Ruínas
+    s += `<g><ellipse cx="770" cy="648" rx="96" ry="13" fill="#000" fill-opacity=".4"/><rect x="700" y="628" width="140" height="10" fill="#8a7a52" stroke="#1a140a"/><rect x="712" y="618" width="116" height="10" fill="#a89464" stroke="#1a140a"/>`;
+    [[716, 70], [744, 46], [772, 58], [800, 30], [828, 62]].forEach(([x, h]) => { s += `<polygon points="${x - 7},618 ${x - 7},${618 - h} ${x - 3},${618 - h - 6} ${x + 2},${618 - h + 2} ${x + 7},${618 - h - 4} ${x + 7},618" fill="#cdbf92" stroke="#4a3a18" stroke-width="1.2"/>`; });
+    s += `<rect x="784" y="640" width="22" height="14" fill="#8a7a52" stroke="#1a140a" transform="rotate(-8 795 647)"/><rect x="730" y="644" width="18" height="12" fill="#a89464" stroke="#1a140a" transform="rotate(10 739 650)"/><circle cx="858" cy="606" r="9" fill="#2a5e34"/><circle cx="702" cy="640" r="8" fill="#2a5e34"/></g>`;
+    // bússola
+    s += `<g transform="translate(95 1100)"><circle r="50" fill="#0b0a07" fill-opacity=".75" stroke="#b89646" stroke-width="2"/><polygon points="0,-42 8,-8 42,0 8,8 0,42 -8,8 -42,0 -8,-8" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><g font-family="Georgia,serif" font-size="15" font-weight="bold" fill="#f0e3b4" text-anchor="middle"><text y="-56">N</text><text y="68">S</text><text x="66" y="5">L</text><text x="-66" y="5">O</text></g></g>`;
+    $("arte").innerHTML = s;
+  }
+
+  // ===== Interface =====
+  function montar() {
+    let h = "";
+    Object.entries(LUGARES).forEach(([id, l]) => {
+      h += `<button class="rot" data-id="${id}" aria-label="${l.nome}" style="left:${pct(l.rot[0], W)};top:${pct(l.rot[1], H)}">${l.placa}</button>`;
+      h += `<button class="pin" data-id="${id}" aria-label="Local ${l.nome}" style="left:${pct(l.pin[0], W)};top:${pct(l.pin[1], H)}"></button>`;
+    });
+    $("mapa").querySelectorAll(".rot,.pin").forEach((e) => e.remove());
+    $("mapa").insertAdjacentHTML("beforeend", h);
+  }
+  function pontos(de, para) {
+    const e = achar(de, para), meio = e && e.pts ? (e.a === de ? e.pts : e.pts.slice().reverse()) : [];
+    return [LUGARES[de].pin, ...meio, LUGARES[para].pin].map((p) => p.join(",")).join(" ");
+  }
+  function desenhar() {
+    let s = `<defs><marker id="seta" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#e5c76b"/></marker></defs>`;
+    for (let i = 1; i < trilha.length; i++) s += `<polyline points="${pontos(trilha[i - 1], trilha[i])}" fill="none" stroke="#8b286c" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>`;
+    vizinhosDe(aqui).forEach((v) => { s += `<polyline points="${pontos(aqui, v)}" fill="none" stroke="#c23a8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14 10" marker-end="url(#seta)" opacity=".95"><animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite"/></polyline>`; });
+    $("sobre").innerHTML = s;
+
+    $("mapa").querySelectorAll(".rot").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("saida", id !== aqui && ligados(aqui, id)); });
+    $("mapa").querySelectorAll(".pin").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("aqui", id === aqui); b.classList.toggle("visitado", visitados.has(id) && id !== aqui); });
+    $("onde").textContent = LUGARES[aqui].nome;
+    $("cont").textContent = visitados.size + " / " + Object.keys(LUGARES).length;
+
+    const l = LUGARES[sel], ar = achar(aqui, sel);
+    let botao;
+    if (sel === aqui) botao = `<p class="trilha" style="margin-top:12px">O grupo está aqui.</p>`;
+    else if (podeIr(sel)) botao = `<button class="mover" data-mover="${sel}">${ar && ar.tempo ? "Percorrer a avenida (" + ar.tempo / 60 + " min de interação)" : "Mover o grupo para cá"}</button>`;
+    else botao = `<button class="mover" disabled>${l.info ? "Trecho da avenida: siga pelo Museu ou pelo Acampamento" : "Sem caminho direto desde " + LUGARES[aqui].nome}</button>`;
+    $("painel").innerHTML =
+      `<p class="tipo">${l.tipo}</p><h2>${l.nome}</h2><p>${l.desc}</p>` +
+      (l.avenida ? `<div class="obs">${OBS_AVENIDA}</div>` : "") +
+      (mestra() ? `<div class="nota"><b>Para a mestra:</b> ${l.mestra}</div>` : "") +
+      `<h3>Caminhos daqui</h3><div class="saidas">` +
+      (vizinhosDe(sel).length ? vizinhosDe(sel).map((v) => { const e = achar(sel, v); return `<button data-ir="${v}">${LUGARES[v].nome}${e.tempo ? " (avenida, " + e.tempo / 60 + " min)" : ""}</button>`; }).join("") : `<span style="font-size:.85rem;color:#a89f88">Este trecho faz parte da avenida.</span>`) +
+      `</div>${botao}<p class="trilha">Trilha do grupo: ${trilha.map((t) => LUGARES[t].nome).join(" → ")}</p>`;
+  }
+
+  // ===== Movimento e viagem pela avenida =====
+  function chegar(id) {
+    aqui = id; sel = id; visitados.add(id); trilha.push(id);
+    falar("O grupo chega a " + LUGARES[id].nome + ".", "ok"); desenhar();
+  }
+  const mmss = (ms) => { const t = Math.ceil(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  function fimViagem() { if (viagem) { clearInterval(viagem.id); viagem = null; } $("viagem").classList.remove("aberta"); }
+  function viajar(para, ar) {
+    const total = ar.tempo * 1000, fim = Date.now() + total;
+    $("v-titulo").textContent = ar.nome + ": " + LUGARES[aqui].nome + " → " + LUGARES[para].nome;
+    $("v-texto").textContent = "O caminho pela avenida equivale a " + ar.tempo / 60 + " minutos de interação entre os jogadores. Conversem, planejem e interpretem os personagens. Quando o tempo acabar, o grupo chega.";
+    $("v-chegar").hidden = $("v-cancelar").hidden = !mestra();
+    $("relogio").textContent = mmss(total); $("v-barra").style.width = "0%";
+    $("viagem").classList.add("aberta");
+    viagem = { para, fim, id: setInterval(() => {
+      const resta = Math.max(0, fim - Date.now());
+      $("relogio").textContent = mmss(resta); $("v-barra").style.width = (100 - resta / total * 100) + "%";
+      if (resta <= 0) { const d = viagem.para; fimViagem(); chegar(d); }
+    }, 200) };
+    desenhar();
+  }
+  function mover(id) {
+    if (!podeIr(id)) return falar("Não há caminho direto até lá. Os locais que brilham são as saídas.", "erro");
+    const ar = achar(aqui, id);
+    if (ar && ar.tempo) return viajar(id, ar);
+    chegar(id);
+  }
+  function reiniciar() {
+    fimViagem(); aqui = INICIO; sel = INICIO; visitados = new Set([INICIO]); trilha = [INICIO]; falar(""); desenhar();
+  }
+
+  $("mapa").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && !viagem) { sel = b.dataset.id; falar(""); desenhar(); } });
+  $("painel").addEventListener("click", (e) => {
+    const ir = e.target.closest("[data-ir]"); if (ir) { sel = ir.dataset.ir; falar(""); return desenhar(); }
+    const mv = e.target.closest("[data-mover]"); if (mv && !mv.disabled) mover(mv.dataset.mover);
+  });
+  $("v-chegar").addEventListener("click", () => { const d = viagem && viagem.para; fimViagem(); if (d) chegar(d); });
+  $("v-cancelar").addEventListener("click", () => { fimViagem(); falar("A viagem foi cancelada.", "erro"); desenhar(); });
+  $("modo").addEventListener("change", desenhar);
+  $("reiniciar").addEventListener("click", reiniciar);
+  arte(); montar(); reiniciar();
+})();
+</script>
+</body>
+</html>

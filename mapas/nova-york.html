@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa de Nova York</title>
+<style>
+/* ==TEMA== padrão visual do site: preto, roxo e vinho, com véus roxos na diagonal. */
+:root {
+  --branco:#0d0b12; --branco-fundo:#050408; --cinza-claro:#1d1726; --cinza:#a79fb6; --preto:#ece7f4;
+  --roxo:#a16be6; --roxo-escuro:#d3b5ff; --vinho:#e0588f; --vinho-escuro:#ffc2d6;
+  --degrade:linear-gradient(120deg,#7136a8,#8b286c,#751b3d);
+  --sombra:0 4px 18px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display:none !important; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:var(--branco-fundo); color:var(--preto); min-height:100vh; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; padding:22px 16px 30px; }
+#cab { width:100%; max-width:1000px; background:var(--branco); padding:16px 24px; text-align:center; border-radius:12px 12px 0 0;
+  border-bottom:3px solid transparent; border-image:var(--degrade) 1; box-shadow:var(--sombra); }
+.selo { font-size:11px; font-weight:700; letter-spacing:.25em; color:var(--cinza); text-transform:uppercase; }
+h1 { color:var(--roxo-escuro); font-size:1.6rem; }
+.sub { color:var(--cinza); font-size:.95rem; max-width:40em; margin:2px auto 0; }
+.greca { display:none; }
+.hud { display:flex; gap:18px; font-size:1rem; align-items:center; flex-wrap:wrap; justify-content:center; color:var(--cinza); }
+.hud b { color:var(--roxo-escuro); font-variant-numeric:tabular-nums; }
+.pill { padding:3px 12px; border:1px solid var(--roxo); color:var(--roxo); border-radius:20px; font-size:.9rem; font-weight:700; background:var(--branco); }
+#aviso { min-height:1.4em; text-align:center; max-width:40em; line-height:1.4; color:var(--cinza); font-style:italic; }
+#aviso.ok { color:var(--roxo); font-style:normal; } #aviso.erro { color:var(--vinho); }
+#aviso.memorize { color:var(--vinho); font-style:normal; font-weight:700; }
+.dica { font-size:.85rem; color:var(--cinza); text-align:center; max-width:40em; }
+.rodape { width:100%; max-width:1000px; padding:16px; text-align:center; font-size:.8rem; color:var(--cinza); background:var(--branco);
+  border-top:3px solid transparent; border-image:var(--degrade) 1; }
+.acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:600; font-size:15px; padding:10px 22px; background:var(--degrade); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:.3s; }
+button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 18px rgba(161,107,230,.35); filter:brightness(1.08); }
+button:disabled { opacity:.45; cursor:default; }
+button.sec { background:var(--branco); color:var(--roxo-escuro); border:1px solid #34254a; }
+#vitoria, #viagem { position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,6,.9); padding:20px; z-index:6; }
+#vitoria.aberta, #viagem.aberta { display:grid; }
+.caixa { text-align:center; max-width:30em; padding:28px 26px; background:var(--branco); border-radius:12px; box-shadow:var(--sombra); border:1px solid #271c38; border-top:4px solid var(--roxo); color:var(--preto); }
+.caixa p.frase { color:var(--roxo-escuro); font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; line-height:1.35; margin:0 0 18px; }
+.caixa p.frase.derrota { color:var(--vinho); }
+::-webkit-scrollbar { width:9px; } ::-webkit-scrollbar-track { background:#0a0810; }
+::-webkit-scrollbar-thumb { background:var(--degrade); border-radius:10px; }
+::selection { background:var(--roxo); color:#fff; }
+/* ==FIM-TEMA== */
+
+.mundo { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:820px) { .mundo { grid-template-columns:1fr; } }
+.mapa { position:relative; container-type:inline-size; aspect-ratio:1000/1200; border:1px solid #2b2040; border-radius:12px; background:#07111d; box-shadow:var(--sombra); line-height:0; user-select:none; overflow:hidden; }
+.mapa > svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.rot { position:absolute; transform:translate(-50%,-50%); white-space:nowrap; padding:.35em .9em; font-weight:700; font-size:max(8.5px,1.7cqw); letter-spacing:.04em; text-transform:uppercase; line-height:1.25; color:var(--roxo-escuro); background:rgba(14,10,20,.92); border:1.5px solid var(--roxo); border-radius:6px; box-shadow:0 2px 10px rgba(33,29,37,.45); cursor:pointer; transition:.2s; }
+.rot:hover:not(:disabled), .rot:focus-visible { background:var(--degrade); color:#fff; border-color:transparent; transform:translate(-50%,-50%); filter:none; box-shadow:0 0 16px rgba(113,54,168,.7); }
+.rot.sel { border-color:var(--vinho); box-shadow:0 0 0 2px var(--vinho), 0 0 16px rgba(117,27,61,.5); }
+.rot.saida { animation:pisca 1.2s infinite alternate; }
+@keyframes pisca { from { box-shadow:0 0 3px rgba(139,40,108,.3), 0 2px 10px rgba(33,29,37,.45); } to { box-shadow:0 0 18px rgba(139,40,108,.95), 0 2px 10px rgba(33,29,37,.45); } }
+.pin { position:absolute; width:clamp(18px,2.7cqw,30px); height:clamp(18px,2.7cqw,30px); transform:translate(-50%,-50%); padding:0; border-radius:50%; border:2px solid var(--roxo); background:rgba(14,10,20,.92); cursor:pointer; line-height:1; font-size:clamp(9px,1.3cqw,14px); color:var(--roxo); display:grid; place-items:center; }
+.pin:hover:not(:disabled), .pin.sel { background:var(--roxo); color:#fff; transform:translate(-50%,-50%); box-shadow:0 0 14px rgba(113,54,168,.8); }
+.pin.visitado::after { content:"✓"; }
+.pin.aqui { width:clamp(26px,3.8cqw,40px); height:clamp(26px,3.8cqw,40px); background:var(--vinho); color:#fff; border-color:#fff; font-size:clamp(13px,1.9cqw,20px); animation:bate 1.6s infinite; }
+.pin.aqui::after { content:"⚑"; }
+@keyframes bate { 0%,100% { box-shadow:0 0 0 3px rgba(117,27,61,.35), 0 0 16px rgba(139,40,108,.7); } 50% { box-shadow:0 0 0 9px rgba(117,27,61,.1), 0 0 26px rgba(139,40,108,1); } }
+.painel { padding:20px; background:var(--branco); border:1px solid #271c38; border-radius:12px; box-shadow:var(--sombra); position:sticky; top:12px; line-height:1.55; }
+.painel .tipo { margin:0 0 2px; font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cinza); }
+.painel h2 { margin:0 0 8px; font-size:1.3rem; color:var(--roxo-escuro); }
+.painel p { margin:0 0 12px; font-size:.93rem; }
+.painel h3 { margin:14px 0 6px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--vinho); }
+.nota { padding:10px 12px; border-left:4px solid var(--vinho); background:#24111c; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--vinho-escuro); margin-bottom:12px; }
+.obs { padding:10px 12px; border-left:4px solid var(--roxo); background:#1a1228; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--roxo-escuro); margin-bottom:12px; }
+.saidas { display:flex; gap:8px; flex-wrap:wrap; }
+.saidas button, .painel .mover { padding:7px 14px; font-size:.82rem; }
+.painel .mover { width:100%; margin-top:6px; }
+.trilha { font-size:.8rem; color:var(--cinza); margin:12px 0 0; }
+.modo { display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--cinza); cursor:pointer; }
+.modo input { accent-color:var(--roxo); width:16px; height:16px; }
+#viagem .caixa { max-width:32em; }
+#viagem .frase { font-size:clamp(1.2rem,4vw,1.6rem); margin-bottom:12px; }
+#viagem p { margin:0 0 14px; }
+#relogio { font:bold clamp(2.6rem,10vw,4rem) ui-monospace,Consolas,monospace; color:var(--roxo-escuro); margin:6px 0 10px; font-variant-numeric:tabular-nums; }
+.barra { height:8px; border-radius:8px; background:var(--cinza-claro); margin:0 0 18px; overflow:hidden; }
+.barra i { display:block; height:100%; width:0; background:var(--degrade); }
+#viagem .botoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ===== VÉUS: linhas finas em degradê roxo cruzando o fundo na diagonal ===== */
+html { background:#050408; scroll-behavior:smooth; }
+body { background:transparent; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' viewBox='0 0 1600 1000'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%237136a8' stop-opacity='0'/><stop offset='.25' stop-color='%239a5ce0'/><stop offset='.55' stop-color='%238b286c'/><stop offset='.8' stop-color='%23b57cff'/><stop offset='1' stop-color='%237136a8' stop-opacity='0'/></linearGradient><linearGradient id='v' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%23b57cff' stop-opacity='0'/><stop offset='.5' stop-color='%237136a8'/><stop offset='1' stop-color='%238b286c' stop-opacity='0'/></linearGradient><filter id='b' x='-10%' y='-10%' width='120%' height='120%'><feGaussianBlur stdDeviation='9'/></filter></defs><g transform='rotate(-34 800 500) translate(0 -20) scale(1.5)'><g filter='url(%23b)' opacity='.22'><line x1='-900' x2='1900' y1='160' y2='160' stroke='url(%23v)' stroke-width='22'/><line x1='-900' x2='1900' y1='480' y2='480' stroke='url(%23v)' stroke-width='30'/><line x1='-900' x2='1900' y1='760' y2='760' stroke='url(%23v)' stroke-width='18'/></g><line x1='-900' x2='1900' y1='40' y2='40' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='130' y2='130' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.8'/><line x1='-900' x2='1900' y1='215' y2='215' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/><line x1='-900' x2='1900' y1='300' y2='300' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='372' y2='372' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.9'/><line x1='-900' x2='1900' y1='455' y2='455' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='520' y2='520' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.75'/><line x1='-900' x2='1900' y1='610' y2='610' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.4'/><line x1='-900' x2='1900' y1='690' y2='690' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.85'/><line x1='-900' x2='1900' y1='775' y2='775' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.55'/><line x1='-900' x2='1900' y1='850' y2='850' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='935' y2='935' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/></g></svg>") center/cover no-repeat; }
+body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(113,54,168,.16), transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(139,40,108,.12), transparent 55%); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid #b57cff; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+  <header id="cab">
+    <p class="selo">Ordem · Mapa do Mundo Exterior</p>
+    <h1>Nova York</h1>
+    <p class="sub">Do Monte Olimpo ao Distrito Abandonado: clique em um local para ver o que há ali e mova o grupo pelos caminhos marcados.</p>
+    <div class="greca"></div>
+  </header>
+
+  <div class="hud"><span>Grupo em <b id="onde"></b></span><span>Lugares visitados <b id="cont"></b></span></div>
+  <div id="aviso" aria-live="polite"></div>
+
+  <div class="mundo">
+    <div class="mapa" id="mapa">
+      <svg id="arte" viewBox="0 0 1000 1200" role="img" aria-label="Mapa ilustrado de Nova York com o Central Park, o Museu Metropolitano, o Monte Olimpo, a Biblioteca de Hécate, o Distrito Abandonado e a avenida para o Acampamento Meio-Sangue"></svg>
+      <svg id="sobre" viewBox="0 0 1000 1200"></svg>
+    </div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </div>
+
+  <div class="acoes">
+    <label class="modo" hidden><input type="checkbox" id="modo"> Modo mestra (notas e mover para qualquer lugar)</label>
+    <button id="reiniciar" class="sec">Reiniciar mapa</button>
+  </div>
+  <p class="dica">O grupo começa na entrada do Acampamento. Os locais que brilham são as saídas do ponto onde o grupo está. O caminho pela avenida leva 2 minutos de interação entre os jogadores.</p>
+  <p class="rodape">Ordem Paranormal × Mitologia Grega</p>
+
+  <div id="viagem" role="dialog" aria-modal="true">
+    <div class="caixa">
+      <p class="frase" id="v-titulo"></p>
+      <p id="v-texto"></p>
+      <div id="relogio">02:00</div>
+      <div class="barra"><i id="v-barra"></i></div>
+      <div class="botoes"><button id="v-chegar">Chegar agora (mestra)</button><button id="v-cancelar" class="sec">Cancelar viagem (mestra)</button></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===== Ajustes fáceis de mexer =====
+  const INICIO = "acampamento";   // onde o grupo começa
+  const OBS_AVENIDA = "Observação: o caminho pela avenida equivale a 2 minutos de interação entre os jogadores.";
+  // rot = onde fica a placa com o nome (x, y no mapa de 1000 x 1200); pin = ponto do local no cenário
+  const LUGARES = {
+    acampamento: { nome: "Entrada do Acampamento Meio-Sangue", placa: "Acampamento Meio-Sangue", rot: [785, 745], pin: [905, 640], avenida: true,
+      tipo: "Ponto de chegada",
+      desc: "Um arco rústico de madeira e pedra, o Pinheiro de Thalia ao fundo e a barreira brilhando no ar como vidro. Daqui saem e para cá voltam todas as missões.",
+      mestra: "" },
+    estrada: { nome: "Estrada de Long Island", placa: "Estrada de Long Island", rot: [820, 440], pin: [800, 524], avenida: true, info: true,
+      tipo: "Trajeto entre a cidade e o Acampamento",
+      desc: "A estrada corta bairros baixos e campos, com a cidade encolhendo atrás do grupo.",
+      mestra: "" },
+    museu: { nome: "Museu Metropolitano", placa: "Museu Metropolitano", rot: [545, 392], pin: [510, 452], avenida: true,
+      tipo: "Museu",
+      desc: "Salões enormes, estátuas gregas e salas de arquivo. Cada corredor guarda algo que o público nunca lê.",
+      mestra: "" },
+    parque: { nome: "Central Park (Praça Central)", placa: "Central Park · Praça Central", rot: [397, 690], pin: [397, 500],
+      tipo: "Parque",
+      desc: "O coração verde da cidade: caminhos sinuosos, um lago escuro e, no centro, uma praça de pedra com uma fonte. Mesmo cheio de gente, há pontos onde o som desaparece.",
+      mestra: "" },
+    biblioteca: { nome: "Biblioteca de Hécate", placa: "Biblioteca de Hécate", rot: [420, 812], pin: [420, 752],
+      tipo: "Biblioteca",
+      desc: "A maior biblioteca perto do parque, com cúpula, tochas que nunca se apagam e uma lua crescente sobre a porta. Os livros mais antigos ficam em andares que não aparecem na planta.",
+      mestra: "" },
+    monte: { nome: "Monte Olimpo (Empire State)", placa: "Monte Olimpo · Empire State", rot: [520, 1085], pin: [520, 985],
+      tipo: "Sede dos deuses e ponto de comunicação",
+      desc: "A torre de pedra e luz se perde acima das nuvens. Para quem sabe como, ela leva além do último andar.",
+      mestra: "" },
+    distrito: { nome: "Distrito Abandonado", placa: "Distrito Abandonado", rot: [285, 88], pin: [262, 255],
+      tipo: "Região abandonada",
+      desc: "Um bairro inteiro que a cidade esqueceu. As luzes não acendem, os relógios param e a escuridão parece mais densa do que deveria.",
+      mestra: "" },
+    portal: { nome: "Portal Oculto", placa: "Portal Oculto", rot: [335, 296], pin: [322, 228],
+      tipo: "Local misterioso",
+      desc: "No fundo do museu em ruínas, o ar dobra como vidro quente e o roxo escorre pelas paredes.",
+      mestra: "" }
+  };
+  // Caminhos (valem nos dois sentidos). tempo = segundos de interação; pts = trajeto desenhado no mapa
+  const ARESTAS = [
+    { a: "museu", b: "acampamento", nome: "Avenida", tempo: 120, pts: [[548, 482], [712, 470], [790, 520], [860, 588]] },
+    { a: "museu", b: "parque" },
+    { a: "parque", b: "biblioteca" },
+    { a: "parque", b: "monte" },
+    { a: "biblioteca", b: "monte" },
+    { a: "parque", b: "distrito" },
+    { a: "distrito", b: "portal" }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const W = 1000, H = 1200;
+  const pct = (v, t) => (v / t * 100) + "%";
+  const achar = (x, y) => ARESTAS.find((e) => (e.a === x && e.b === y) || (e.a === y && e.b === x));
+  const vizinhosDe = (id) => ARESTAS.filter((e) => e.a === id || e.b === id).map((e) => (e.a === id ? e.b : e.a));
+  let aqui, sel, visitados, trilha, viagem = null;
+
+  function falar(t, cls) { $("aviso").textContent = t; $("aviso").className = cls || ""; }
+  const mestra = () => false;
+  const ligados = (a, b) => !!achar(a, b);
+  const podeIr = (id) => !viagem && id !== aqui && (mestra() || ligados(aqui, id));
+
+  // ===== Arte do mapa =====
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const interp = (pts, y) => { for (let i = 1; i < pts.length; i++) if (y <= pts[i][1]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return x0 + (x1 - x0) * (y - y0) / (y1 - y0); } return pts[pts.length - 1][0]; };
+  const ESQ = [[170, 60], [228, 330], [300, 600], [372, 900], [420, 1175]];
+  const DIR = [[480, 38], [548, 300], [590, 620], [612, 860], [650, 1090], [560, 1175]];
+  const ILHA = "M170 60 L480 38 L548 300 L590 620 L612 860 L650 1090 L560 1175 L420 1175 L372 900 L300 600 L228 330 Z";
+
+  function arte() {
+    const R = rng(11);
+    let s = `<defs>
+      <linearGradient id="gAgua" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1c31"/><stop offset="1" stop-color="#06101b"/></linearGradient>
+      <radialGradient id="gParque" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#2f6e3c"/><stop offset="1" stop-color="#123018"/></radialGradient>
+      <linearGradient id="gOuro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d680"/><stop offset="1" stop-color="#8a6d28"/></linearGradient>
+      <linearGradient id="gPedra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c690"/><stop offset="1" stop-color="#7d6a3c"/></linearGradient>
+      <radialGradient id="gPortal"><stop offset="0" stop-color="#ffffff"/><stop offset=".25" stop-color="#d3a0ff"/><stop offset=".6" stop-color="#6a1fd0" stop-opacity=".85"/><stop offset="1" stop-color="#6a1fd0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gNevoa"><stop offset="0" stop-color="#000" stop-opacity=".9"/><stop offset=".65" stop-color="#000" stop-opacity=".7"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gHalo"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gHecate"><stop offset="0" stop-color="#b57cff" stop-opacity=".45"/><stop offset="1" stop-color="#b57cff" stop-opacity="0"/></radialGradient>
+      <filter id="rugoso" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency=".028" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="50"/></filter>
+      <clipPath id="cIlha"><path d="${ILHA}"/></clipPath>
+    </defs>`;
+    s += `<rect width="1000" height="1200" fill="url(#gAgua)"/>`;
+    // ondas
+    for (let i = 0; i < 70; i++) {
+      const lado = R() < .5; const x = lado ? 10 + R() * 130 : 590 + R() * 120, y = 20 + R() * 1160;
+      if (!lado && x < interp(DIR, y) + 12) continue;
+      s += `<path d="M${x} ${y} q9 -6 18 0 t18 0" fill="none" stroke="#5b8cc4" stroke-opacity=".2" stroke-width="1.5"/>`;
+    }
+    s += `<text transform="translate(62 600) rotate(-90)" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#6f9bd0" fill-opacity=".45">RIO HUDSON</text>`;
+    s += `<text transform="translate(662 800) rotate(-90)" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#6f9bd0" fill-opacity=".45">RIO EAST</text>`;
+    // Queens / Long Island
+    s += `<path d="M722 0 L1000 0 L1000 1200 L700 1200 L690 1000 L716 820 L706 640 L722 480 L702 300 L728 150 Z" fill="#1b2113" stroke="#b8962e" stroke-opacity=".5" stroke-width="2"/>`;
+    for (let i = 0; i < 160; i++) {
+      const x = 740 + R() * 255, y = 10 + R() * 1180;
+      if ((y > 440 && y < 740 && x < 950 && x > 700) || (Math.abs(x - 905) < 70 && Math.abs(y - 640) < 100)) continue;
+      const r = 5 + R() * 8; s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${R() < .5 ? "#27381c" : "#1f2d17"}"/>`;
+    }
+    s += `<text x="860" y="260" text-anchor="middle" font-family="Georgia,serif" font-size="24" letter-spacing="6" fill="#b8962e" fill-opacity=".35">LONG ISLAND</text>`;
+    // Manhattan
+    s += `<path d="${ILHA}" fill="#241e12" stroke="#b8962e" stroke-width="3"/>`;
+    s += `<g clip-path="url(#cIlha)" stroke="#b8962e" stroke-opacity=".11" stroke-width="1">`;
+    for (let y = 40; y < 1200; y += 26) s += `<line x1="100" y1="${y}" x2="700" y2="${y}"/>`;
+    for (let x = -180; x < 680; x += 44) s += `<line x1="${x}" y1="0" x2="${x + 253}" y2="1200"/>`;
+    s += `</g>`;
+    // quarteirões
+    const livres = [[322, 318, 472, 668], [466, 420, 566, 500], [348, 690, 500, 800], [455, 785, 590, 1010]];
+    const noDistrito = (x, y) => ((x - 285) / 112) ** 2 + ((y - 200) / 140) ** 2 < 1;
+    const paletas = ["#3a2f18", "#4a3b1c", "#2e2614", "#5a4722", "#44361a"];
+    for (let y = 70; y < 1165; y += 26) {
+      const L = interp(ESQ, y) + 12, Rr = interp(DIR, y) - 12;
+      for (let x = L; x < Rr; x += 24) {
+        if (R() > .66) continue;
+        const bx = x + R() * 5, by = y + R() * 4;
+        if (livres.some(([a, b, c, d]) => bx > a - 12 && bx < c && by > b - 12 && by < d) || noDistrito(bx, by) || (by > 462 && by < 496 && bx > 466)) continue;
+        const w = 12 + R() * 8, h = 12 + R() * 10, c = paletas[Math.floor(R() * paletas.length)];
+        s += `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${c}"/><rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${w.toFixed(1)}" height="3" fill="#8a6d28" fill-opacity=".55"/>`;
+        if (R() < .35) s += `<rect x="${(bx + 3).toFixed(1)}" y="${(by + 6).toFixed(1)}" width="2.5" height="2.5" fill="#ffd877" fill-opacity=".8"/>`;
+        if (R() < .2) s += `<rect x="${(bx + w - 6).toFixed(1)}" y="${(by + 9).toFixed(1)}" width="2.5" height="2.5" fill="#ffd877" fill-opacity=".7"/>`;
+      }
+    }
+    // Central Park
+    s += `<rect x="332" y="322" width="130" height="338" rx="10" fill="url(#gParque)" stroke="#3b7a48" stroke-width="2"/>`;
+    s += `<ellipse cx="366" cy="410" rx="26" ry="14" fill="#1d4a6e" stroke="#4a86b3" stroke-width="1.5"/><ellipse cx="428" cy="596" rx="22" ry="30" fill="#1d4a6e" stroke="#4a86b3" stroke-width="1.5"/>`;
+    s += `<path d="M345 345 C 380 380 360 440 397 495 S 440 590 420 650 M458 360 C 420 400 430 440 397 495 S 350 560 346 640" fill="none" stroke="#d9c690" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>`;
+    for (let i = 0; i < 120; i++) {
+      const x = 340 + R() * 114, y = 330 + R() * 322;
+      if (Math.hypot(x - 397, y - 497) < 48 || (((x - 366) / 30) ** 2 + ((y - 410) / 18) ** 2 < 1) || (((x - 428) / 26) ** 2 + ((y - 596) / 34) ** 2 < 1)) continue;
+      const r = 4 + R() * 5; s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${R() < .5 ? "#1c4a26" : "#2a6a36"}" stroke="#0e2a14" stroke-width=".6"/>`;
+    }
+    s += `<circle cx="397" cy="497" r="46" fill="none" stroke="#d9c690" stroke-opacity=".5" stroke-width="2" stroke-dasharray="4 5"/><circle cx="397" cy="497" r="34" fill="#a89464" fill-opacity=".7" stroke="#e5c76b" stroke-width="2"/>`;
+    s += `<g stroke="#e5c76b" stroke-opacity=".7" stroke-width="2"><line x1="397" y1="467" x2="397" y2="527"/><line x1="367" y1="497" x2="427" y2="497"/></g><circle cx="397" cy="497" r="13" fill="#2c6e9e" stroke="#e5c76b" stroke-width="2"/><circle cx="397" cy="497" r="5" fill="#b9e3ff"/>`;
+    // Museu Metropolitano
+    s += `<g><rect x="470" y="436" width="82" height="40" fill="url(#gPedra)" stroke="#2a2010" stroke-width="2"/><polygon points="466,436 511,412 556,436" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/>`;
+    for (let i = 0; i < 6; i++) s += `<rect x="${474 + i * 14}" y="438" width="5" height="34" fill="#f3e7bf" stroke="#4a3a18" stroke-width=".8"/>`;
+    s += `<rect x="466" y="476" width="90" height="6" fill="#b89646" stroke="#2a2010" stroke-width="1.5"/><circle cx="511" cy="428" r="5" fill="#2a2010"/></g>`;
+    // Biblioteca de Hécate
+    s += `<circle cx="420" cy="738" r="96" fill="url(#gHecate)"/><g><rect x="358" y="736" width="124" height="42" fill="url(#gPedra)" stroke="#2a2010" stroke-width="2"/><polygon points="354,736 420,714 486,736" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/>`;
+    s += `<ellipse cx="420" cy="708" rx="24" ry="22" fill="#8a6d28" stroke="#2a2010" stroke-width="2"/><rect x="416" y="682" width="8" height="12" fill="#e5c76b" stroke="#2a2010" stroke-width="1"/>`;
+    for (let i = 0; i < 8; i++) s += `<path d="M${366 + i * 15} 774 v-18 a4.5 5 0 0 1 9 0 v18z" fill="#1a140a" stroke="#4a3a18" stroke-width=".8"/>`;
+    s += `<rect x="354" y="778" width="132" height="6" fill="#b89646" stroke="#2a2010" stroke-width="1.5"/>`;
+    s += `<path d="M420 664 a14 14 0 1 0 0 28 a10.5 10.5 0 1 1 0 -28z" fill="#e8d4ff" stroke="#8a4ad0" stroke-width="1.5"/>`;
+    s += `<ellipse cx="350" cy="742" rx="5" ry="9" fill="#ffb347"><animate attributeName="ry" values="9;11;8;9" dur="1.3s" repeatCount="indefinite"/></ellipse><ellipse cx="490" cy="742" rx="5" ry="9" fill="#ffb347"><animate attributeName="ry" values="8;10;9;8" dur="1.1s" repeatCount="indefinite"/></ellipse></g>`;
+    // Empire State = Monte Olimpo
+    s += `<circle cx="520" cy="800" r="70" fill="url(#gHalo)"/><g>`;
+    s += `<polygon points="558,962 590,950 590,986 558,998" fill="#000" fill-opacity=".35"/><rect x="480" y="946" width="78" height="44" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/><rect x="492" y="910" width="54" height="36" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/><rect x="501" y="872" width="36" height="38" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/><rect x="509" y="836" width="20" height="36" fill="url(#gOuro)" stroke="#2a2010" stroke-width="2"/><rect x="514" y="806" width="10" height="30" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><line x1="519" y1="806" x2="519" y2="766" stroke="#e5c76b" stroke-width="3"/><circle cx="519" cy="764" r="4" fill="#fff6d0"/>`;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) s += `<rect x="${486 + c * 12}" y="${952 + r * 9}" width="4" height="5" fill="#2a2010" fill-opacity=".55"/>`;
+    s += `</g><ellipse cx="462" cy="858" rx="38" ry="12" fill="#fff" fill-opacity=".22"/><ellipse cx="578" cy="826" rx="34" ry="11" fill="#fff" fill-opacity=".2"/><ellipse cx="548" cy="880" rx="26" ry="8" fill="#fff" fill-opacity=".16"/>`;
+    // Distrito Abandonado
+    s += `<ellipse cx="285" cy="200" rx="112" ry="142" fill="#020202" filter="url(#rugoso)"/><ellipse cx="285" cy="200" rx="150" ry="180" fill="url(#gNevoa)" opacity=".75"/>`;
+    const ruinas = [[205, 300, 18, 46], [228, 304, 22, 70], [254, 300, 16, 38], [300, 306, 24, 58], [330, 300, 18, 44], [352, 304, 14, 32], [190, 150, 16, 40], [350, 140, 14, 36]];
+    ruinas.forEach(([x, y, w, h]) => {
+      let p = `${x},${y} ${x},${y - h} `; for (let k = 0; k < 4; k++) p += `${x + w * (k + .5) / 4},${y - h + (k % 2 ? 5 : -6) + R() * 7} `; p += `${x + w},${y - h + 8} ${x + w},${y}`;
+      s += `<polygon points="${p}" fill="#15110c" stroke="#33291a" stroke-width="1.5"/>`;
+      if (R() < .6) s += `<rect x="${x + 4}" y="${y - h + 14}" width="3" height="4" fill="#9b3dff" fill-opacity=".6"/>`;
+      if (R() < .5) s += `<rect x="${x + w - 7}" y="${y - h + 26}" width="3" height="4" fill="#c4302b" fill-opacity=".55"/>`;
+    });
+    s += `<g><rect x="232" y="196" width="40" height="22" fill="#231d12" stroke="#4a3a18" stroke-width="1.5"/><polygon points="228,196 252,178 262,186 270,182 276,196" fill="#2b2316" stroke="#4a3a18" stroke-width="1.5"/><rect x="238" y="200" width="4" height="18" fill="#3b3020"/><rect x="250" y="200" width="4" height="18" fill="#3b3020"/><rect x="262" y="204" width="4" height="14" fill="#3b3020"/></g>`;
+    s += `<path d="M205 120 l16 24 l-8 14 l22 20 M340 250 l-18 -16 l10 -14 l-20 -18 M250 270 l10 -22" fill="none" stroke="#8a4ad0" stroke-opacity=".65" stroke-width="1.6"/>`;
+    s += `<ellipse cx="285" cy="200" rx="116" ry="146" fill="none" stroke="#8a4ad0" stroke-opacity=".6" stroke-width="2" stroke-dasharray="3 9"/>`;
+    s += `<circle cx="322" cy="228" r="46" fill="url(#gPortal)" opacity=".55"><animate attributeName="r" values="42;52;42" dur="3s" repeatCount="indefinite"/></circle><ellipse cx="322" cy="228" rx="15" ry="22" fill="url(#gPortal)"/><path d="M322 208 a9 14 0 1 1 -2 22 a5 8 0 1 0 2 -14" fill="none" stroke="#f0d8ff" stroke-width="2"/>`;
+    // avenida e ponte
+    const via = "M552 482 L712 470 C 760 468 790 520 830 556 C 860 584 880 610 898 630";
+    s += `<path d="M520 484 L552 482" fill="none" stroke="#b89646" stroke-width="22" stroke-linecap="round"/><path d="${via}" fill="none" stroke="#b89646" stroke-width="22" stroke-linecap="round"/><path d="M520 484 L552 482" fill="none" stroke="#2a2418" stroke-width="17"/><path d="${via}" fill="none" stroke="#2a2418" stroke-width="17" stroke-linecap="round"/><path d="M520 484 L552 482 L712 470 C 760 468 790 520 830 556 C 860 584 880 610 898 630" fill="none" stroke="#e5c76b" stroke-width="2" stroke-dasharray="10 8"/>`;
+    s += `<g stroke="#e5c76b" stroke-width="3" fill="none"><rect x="596" y="438" width="9" height="48" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><rect x="662" y="432" width="9" height="46" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><path d="M552 480 L600 440 M600 440 Q 633 486 666 434 M666 434 L712 470" stroke-opacity=".9"/></g>`;
+    s += `<g transform="translate(632 516)"><rect x="-86" y="-12" width="172" height="22" rx="3" fill="#0b0a07" stroke="#b89646"/><text y="4" text-anchor="middle" font-family="Georgia,serif" font-size="12" font-weight="bold" letter-spacing="1.2" fill="#f0e3b4">AVENIDA · 2 MIN DE INTERAÇÃO</text></g>`;
+    // Acampamento
+    s += `<ellipse cx="950" cy="650" rx="92" ry="86" fill="none" stroke="#9ed2ff" stroke-opacity=".45" stroke-width="2" stroke-dasharray="6 6"/><ellipse cx="940" cy="668" rx="82" ry="46" fill="#2a3a1c" stroke="#3d5428" stroke-width="2"/>`;
+    s += `<g><rect x="886" y="606" width="9" height="42" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><rect x="920" y="606" width="9" height="42" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><rect x="882" y="598" width="51" height="10" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/></g>`;
+    s += `<polygon points="962,578 944,612 980,612" fill="#1c4a26" stroke="#0e2a14"/><polygon points="962,596 940,634 984,634" fill="#256033" stroke="#0e2a14"/><polygon points="962,616 934,658 990,658" fill="#2d7a3e" stroke="#0e2a14"/><rect x="959" y="658" width="6" height="12" fill="#5a3b1a"/><circle cx="962" cy="574" r="5" fill="#ffe9a0"/>`;
+    [[948, 684, "#8a3a2a"], [966, 692, "#3a5a8a"], [984, 684, "#8a6d28"], [1000, 696, "#5a3a7a"]].forEach(([x, y, c]) => { s += `<rect x="${x - 8}" y="${y}" width="16" height="12" fill="${c}" stroke="#1a140a"/><polygon points="${x - 10},${y} ${x},${y - 9} ${x + 10},${y}" fill="#2a2010"/>`; });
+    s += `<circle cx="930" cy="706" r="14" fill="url(#gHalo)"/><circle cx="930" cy="708" r="3" fill="#ffb347"/>`;
+    // bússola
+    s += `<g transform="translate(95 1100)"><circle r="52" fill="#0b0a07" fill-opacity=".7" stroke="#b89646" stroke-width="2"/><polygon points="0,-44 8,-8 44,0 8,8 0,44 -8,8 -44,0 -8,-8" fill="url(#gOuro)" stroke="#2a2010" stroke-width="1.5"/><g font-family="Georgia,serif" font-size="15" font-weight="bold" fill="#f0e3b4" text-anchor="middle"><text y="-58">N</text><text y="70">S</text><text x="68" y="5">L</text><text x="-68" y="5">O</text></g></g>`;
+    $("arte").innerHTML = s;
+  }
+
+  // ===== Interface =====
+  function montar() {
+    let h = "";
+    Object.entries(LUGARES).forEach(([id, l]) => {
+      h += `<button class="rot" data-id="${id}" aria-label="${l.nome}" style="left:${pct(l.rot[0], W)};top:${pct(l.rot[1], H)}">${l.placa}</button>`;
+      h += `<button class="pin" data-id="${id}" aria-label="Local ${l.nome}" style="left:${pct(l.pin[0], W)};top:${pct(l.pin[1], H)}"></button>`;
+    });
+    $("mapa").querySelectorAll(".rot,.pin").forEach((e) => e.remove());
+    $("mapa").insertAdjacentHTML("beforeend", h);
+  }
+  function pontos(de, para) {
+    const e = achar(de, para), meio = e && e.pts ? (e.a === de ? e.pts : e.pts.slice().reverse()) : [];
+    return [LUGARES[de].pin, ...meio, LUGARES[para].pin].map((p) => p.join(",")).join(" ");
+  }
+  function desenhar() {
+    let s = `<defs><marker id="seta" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#e5c76b"/></marker></defs>`;
+    for (let i = 1; i < trilha.length; i++) s += `<polyline points="${pontos(trilha[i - 1], trilha[i])}" fill="none" stroke="#8b286c" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>`;
+    vizinhosDe(aqui).forEach((v) => { s += `<polyline points="${pontos(aqui, v)}" fill="none" stroke="#c23a8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14 10" marker-end="url(#seta)" opacity=".95"><animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite"/></polyline>`; });
+    $("sobre").innerHTML = s;
+
+    $("mapa").querySelectorAll(".rot").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("saida", id !== aqui && ligados(aqui, id)); });
+    $("mapa").querySelectorAll(".pin").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("aqui", id === aqui); b.classList.toggle("visitado", visitados.has(id) && id !== aqui); });
+    $("onde").textContent = LUGARES[aqui].nome;
+    $("cont").textContent = visitados.size + " / " + Object.keys(LUGARES).length;
+
+    const l = LUGARES[sel], ar = achar(aqui, sel);
+    let botao;
+    if (sel === aqui) botao = `<p class="trilha" style="margin-top:12px">O grupo está aqui.</p>`;
+    else if (podeIr(sel)) botao = `<button class="mover" data-mover="${sel}">${ar && ar.tempo ? "Percorrer a avenida (" + ar.tempo / 60 + " min de interação)" : "Mover o grupo para cá"}</button>`;
+    else botao = `<button class="mover" disabled>${l.info ? "Trecho da avenida: siga pelo Museu ou pelo Acampamento" : "Sem caminho direto desde " + LUGARES[aqui].nome}</button>`;
+    $("painel").innerHTML =
+      `<p class="tipo">${l.tipo}</p><h2>${l.nome}</h2><p>${l.desc}</p>` +
+      (l.avenida ? `<div class="obs">${OBS_AVENIDA}</div>` : "") +
+      (mestra() ? `<div class="nota"><b>Para a mestra:</b> ${l.mestra}</div>` : "") +
+      `<h3>Caminhos daqui</h3><div class="saidas">` +
+      (vizinhosDe(sel).length ? vizinhosDe(sel).map((v) => { const e = achar(sel, v); return `<button data-ir="${v}">${LUGARES[v].nome}${e.tempo ? " (avenida, " + e.tempo / 60 + " min)" : ""}</button>`; }).join("") : `<span style="font-size:.85rem;color:#a89f88">Este trecho faz parte da avenida.</span>`) +
+      `</div>${botao}<p class="trilha">Trilha do grupo: ${trilha.map((t) => LUGARES[t].nome).join(" → ")}</p>`;
+  }
+
+  // ===== Movimento e viagem pela avenida =====
+  function chegar(id) {
+    aqui = id; sel = id; visitados.add(id); trilha.push(id);
+    falar("O grupo chega a " + LUGARES[id].nome + ".", "ok"); desenhar();
+  }
+  const mmss = (ms) => { const t = Math.ceil(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  function fimViagem() { if (viagem) { clearInterval(viagem.id); viagem = null; } $("viagem").classList.remove("aberta"); }
+  function viajar(para, ar) {
+    const total = ar.tempo * 1000, fim = Date.now() + total;
+    $("v-titulo").textContent = ar.nome + ": " + LUGARES[aqui].nome + " → " + LUGARES[para].nome;
+    $("v-texto").textContent = "O caminho pela avenida equivale a " + ar.tempo / 60 + " minutos de interação entre os jogadores. Conversem, planejem e interpretem os personagens. Quando o tempo acabar, o grupo chega.";
+    $("v-chegar").hidden = $("v-cancelar").hidden = !mestra();
+    $("relogio").textContent = mmss(total); $("v-barra").style.width = "0%";
+    $("viagem").classList.add("aberta");
+    viagem = { para, fim, id: setInterval(() => {
+      const resta = Math.max(0, fim - Date.now());
+      $("relogio").textContent = mmss(resta); $("v-barra").style.width = (100 - resta / total * 100) + "%";
+      if (resta <= 0) { const d = viagem.para; fimViagem(); chegar(d); }
+    }, 200) };
+    desenhar();
+  }
+  function mover(id) {
+    if (!podeIr(id)) return falar("Não há caminho direto até lá. Os locais que brilham são as saídas.", "erro");
+    const ar = achar(aqui, id);
+    if (ar && ar.tempo) return viajar(id, ar);
+    chegar(id);
+  }
+  function reiniciar() {
+    fimViagem(); aqui = INICIO; sel = INICIO; visitados = new Set([INICIO]); trilha = [INICIO]; falar(""); desenhar();
+  }
+
+  $("mapa").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && !viagem) { sel = b.dataset.id; falar(""); desenhar(); } });
+  $("painel").addEventListener("click", (e) => {
+    const ir = e.target.closest("[data-ir]"); if (ir) { sel = ir.dataset.ir; falar(""); return desenhar(); }
+    const mv = e.target.closest("[data-mover]"); if (mv && !mv.disabled) mover(mv.dataset.mover);
+  });
+  $("v-chegar").addEventListener("click", () => { const d = viagem && viagem.para; fimViagem(); if (d) chegar(d); });
+  $("v-cancelar").addEventListener("click", () => { fimViagem(); falar("A viagem foi cancelada.", "erro"); desenhar(); });
+  $("modo").addEventListener("change", desenhar);
+  $("reiniciar").addEventListener("click", reiniciar);
+  arte(); montar(); reiniciar();
+})();
+</script>
+</body>
+</html>

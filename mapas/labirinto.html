@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa do Labirinto Dimensional</title>
+<style>
+/* ==TEMA== padrão visual do site: preto, roxo e vinho, com véus roxos na diagonal. */
+:root {
+  --branco:#0d0b12; --branco-fundo:#050408; --cinza-claro:#1d1726; --cinza:#a79fb6; --preto:#ece7f4;
+  --roxo:#a16be6; --roxo-escuro:#d3b5ff; --vinho:#e0588f; --vinho-escuro:#ffc2d6;
+  --degrade:linear-gradient(120deg,#7136a8,#8b286c,#751b3d);
+  --sombra:0 4px 18px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display:none !important; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:var(--branco-fundo); color:var(--preto); min-height:100vh; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; padding:22px 16px 30px; }
+#cab { width:100%; max-width:1000px; background:var(--branco); padding:16px 24px; text-align:center; border-radius:12px 12px 0 0;
+  border-bottom:3px solid transparent; border-image:var(--degrade) 1; box-shadow:var(--sombra); }
+.selo { font-size:11px; font-weight:700; letter-spacing:.25em; color:var(--cinza); text-transform:uppercase; }
+h1 { color:var(--roxo-escuro); font-size:1.6rem; }
+.sub { color:var(--cinza); font-size:.95rem; max-width:40em; margin:2px auto 0; }
+.greca { display:none; }
+.hud { display:flex; gap:18px; font-size:1rem; align-items:center; flex-wrap:wrap; justify-content:center; color:var(--cinza); }
+.hud b { color:var(--roxo-escuro); font-variant-numeric:tabular-nums; }
+.pill { padding:3px 12px; border:1px solid var(--roxo); color:var(--roxo); border-radius:20px; font-size:.9rem; font-weight:700; background:var(--branco); }
+#aviso { min-height:1.4em; text-align:center; max-width:40em; line-height:1.4; color:var(--cinza); font-style:italic; }
+#aviso.ok { color:var(--roxo); font-style:normal; } #aviso.erro { color:var(--vinho); }
+#aviso.memorize { color:var(--vinho); font-style:normal; font-weight:700; }
+.dica { font-size:.85rem; color:var(--cinza); text-align:center; max-width:40em; }
+.rodape { width:100%; max-width:1000px; padding:16px; text-align:center; font-size:.8rem; color:var(--cinza); background:var(--branco);
+  border-top:3px solid transparent; border-image:var(--degrade) 1; }
+.acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:600; font-size:15px; padding:10px 22px; background:var(--degrade); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:.3s; }
+button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 18px rgba(161,107,230,.35); filter:brightness(1.08); }
+button:disabled { opacity:.45; cursor:default; }
+button.sec { background:var(--branco); color:var(--roxo-escuro); border:1px solid #34254a; }
+#vitoria, #viagem { position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,6,.9); padding:20px; z-index:6; }
+#vitoria.aberta, #viagem.aberta { display:grid; }
+.caixa { text-align:center; max-width:30em; padding:28px 26px; background:var(--branco); border-radius:12px; box-shadow:var(--sombra); border:1px solid #271c38; border-top:4px solid var(--roxo); color:var(--preto); }
+.caixa p.frase { color:var(--roxo-escuro); font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; line-height:1.35; margin:0 0 18px; }
+.caixa p.frase.derrota { color:var(--vinho); }
+::-webkit-scrollbar { width:9px; } ::-webkit-scrollbar-track { background:#0a0810; }
+::-webkit-scrollbar-thumb { background:var(--degrade); border-radius:10px; }
+::selection { background:var(--roxo); color:#fff; }
+/* ==FIM-TEMA== */
+
+.mundo { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:820px) { .mundo { grid-template-columns:1fr; } }
+.mapa { position:relative; container-type:inline-size; aspect-ratio:1000/1200; border:1px solid #2b2040; border-radius:12px; background:#07111d; box-shadow:var(--sombra); line-height:0; user-select:none; overflow:hidden; }
+.mapa > svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.rot { position:absolute; transform:translate(-50%,-50%); white-space:nowrap; padding:.35em .9em; font-weight:700; font-size:max(8.5px,1.7cqw); letter-spacing:.04em; text-transform:uppercase; line-height:1.25; color:var(--roxo-escuro); background:rgba(14,10,20,.92); border:1.5px solid var(--roxo); border-radius:6px; box-shadow:0 2px 10px rgba(33,29,37,.45); cursor:pointer; transition:.2s; }
+.rot:hover:not(:disabled), .rot:focus-visible { background:var(--degrade); color:#fff; border-color:transparent; transform:translate(-50%,-50%); filter:none; box-shadow:0 0 16px rgba(113,54,168,.7); }
+.rot.sel { border-color:var(--vinho); box-shadow:0 0 0 2px var(--vinho), 0 0 16px rgba(117,27,61,.5); }
+.rot.saida { animation:pisca 1.2s infinite alternate; }
+@keyframes pisca { from { box-shadow:0 0 3px rgba(139,40,108,.3), 0 2px 10px rgba(33,29,37,.45); } to { box-shadow:0 0 18px rgba(139,40,108,.95), 0 2px 10px rgba(33,29,37,.45); } }
+.pin { position:absolute; width:clamp(18px,2.7cqw,30px); height:clamp(18px,2.7cqw,30px); transform:translate(-50%,-50%); padding:0; border-radius:50%; border:2px solid var(--roxo); background:rgba(14,10,20,.92); cursor:pointer; line-height:1; font-size:clamp(9px,1.3cqw,14px); color:var(--roxo); display:grid; place-items:center; }
+.pin:hover:not(:disabled), .pin.sel { background:var(--roxo); color:#fff; transform:translate(-50%,-50%); box-shadow:0 0 14px rgba(113,54,168,.8); }
+.pin.visitado::after { content:"✓"; }
+.pin.aqui { width:clamp(26px,3.8cqw,40px); height:clamp(26px,3.8cqw,40px); background:var(--vinho); color:#fff; border-color:#fff; font-size:clamp(13px,1.9cqw,20px); animation:bate 1.6s infinite; }
+.pin.aqui::after { content:"⚑"; }
+@keyframes bate { 0%,100% { box-shadow:0 0 0 3px rgba(117,27,61,.35), 0 0 16px rgba(139,40,108,.7); } 50% { box-shadow:0 0 0 9px rgba(117,27,61,.1), 0 0 26px rgba(139,40,108,1); } }
+.painel { padding:20px; background:var(--branco); border:1px solid #271c38; border-radius:12px; box-shadow:var(--sombra); position:sticky; top:12px; line-height:1.55; }
+.painel .tipo { margin:0 0 2px; font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cinza); }
+.painel h2 { margin:0 0 8px; font-size:1.3rem; color:var(--roxo-escuro); }
+.painel p { margin:0 0 12px; font-size:.93rem; }
+.painel h3 { margin:14px 0 6px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--vinho); }
+.nota { padding:10px 12px; border-left:4px solid var(--vinho); background:#24111c; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--vinho-escuro); margin-bottom:12px; }
+.obs { padding:10px 12px; border-left:4px solid var(--roxo); background:#1a1228; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--roxo-escuro); margin-bottom:12px; }
+.saidas { display:flex; gap:8px; flex-wrap:wrap; }
+.saidas button, .painel .mover { padding:7px 14px; font-size:.82rem; }
+.painel .mover { width:100%; margin-top:6px; }
+.trilha { font-size:.8rem; color:var(--cinza); margin:12px 0 0; }
+.modo { display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--cinza); cursor:pointer; }
+.modo input { accent-color:var(--roxo); width:16px; height:16px; }
+#viagem .caixa { max-width:32em; }
+#viagem .frase { font-size:clamp(1.2rem,4vw,1.6rem); margin-bottom:12px; }
+#viagem p { margin:0 0 14px; }
+#relogio { font:bold clamp(2.6rem,10vw,4rem) ui-monospace,Consolas,monospace; color:var(--roxo-escuro); margin:6px 0 10px; font-variant-numeric:tabular-nums; }
+.barra { height:8px; border-radius:8px; background:var(--cinza-claro); margin:0 0 18px; overflow:hidden; }
+.barra i { display:block; height:100%; width:0; background:var(--degrade); }
+#viagem .botoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ===== VÉUS: linhas finas em degradê roxo cruzando o fundo na diagonal ===== */
+html { background:#050408; scroll-behavior:smooth; }
+body { background:transparent; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' viewBox='0 0 1600 1000'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%237136a8' stop-opacity='0'/><stop offset='.25' stop-color='%239a5ce0'/><stop offset='.55' stop-color='%238b286c'/><stop offset='.8' stop-color='%23b57cff'/><stop offset='1' stop-color='%237136a8' stop-opacity='0'/></linearGradient><linearGradient id='v' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%23b57cff' stop-opacity='0'/><stop offset='.5' stop-color='%237136a8'/><stop offset='1' stop-color='%238b286c' stop-opacity='0'/></linearGradient><filter id='b' x='-10%' y='-10%' width='120%' height='120%'><feGaussianBlur stdDeviation='9'/></filter></defs><g transform='rotate(-34 800 500) translate(0 -20) scale(1.5)'><g filter='url(%23b)' opacity='.22'><line x1='-900' x2='1900' y1='160' y2='160' stroke='url(%23v)' stroke-width='22'/><line x1='-900' x2='1900' y1='480' y2='480' stroke='url(%23v)' stroke-width='30'/><line x1='-900' x2='1900' y1='760' y2='760' stroke='url(%23v)' stroke-width='18'/></g><line x1='-900' x2='1900' y1='40' y2='40' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='130' y2='130' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.8'/><line x1='-900' x2='1900' y1='215' y2='215' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/><line x1='-900' x2='1900' y1='300' y2='300' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='372' y2='372' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.9'/><line x1='-900' x2='1900' y1='455' y2='455' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='520' y2='520' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.75'/><line x1='-900' x2='1900' y1='610' y2='610' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.4'/><line x1='-900' x2='1900' y1='690' y2='690' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.85'/><line x1='-900' x2='1900' y1='775' y2='775' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.55'/><line x1='-900' x2='1900' y1='850' y2='850' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='935' y2='935' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/></g></svg>") center/cover no-repeat; }
+body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(113,54,168,.16), transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(139,40,108,.12), transparent 55%); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid #b57cff; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+  <header id="cab">
+    <p class="selo">Ordem · Mapa</p>
+    <h1>O Labirinto Dimensional</h1>
+    <p class="sub">Clique em um local para ver o que há ali. O caminho muda: o grupo precisa descobrir a rota até a Oficina.</p>
+    <div class="greca"></div>
+  </header>
+
+  <div class="hud"><span>Grupo em <b id="onde"></b></span><span>Lugares visitados <b id="cont"></b></span></div>
+  <div id="aviso" aria-live="polite"></div>
+
+  <div class="mundo">
+    <div class="mapa" id="mapa">
+      <svg id="arte" viewBox="0 0 1000 1200" role="img" aria-label="Mapa ilustrado do Labirinto: Entrada, Salas vivas, Corredores móveis, Portas impossíveis e Rota até a Oficina"></svg>
+      <svg id="sobre" viewBox="0 0 1000 1200"></svg>
+    </div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </div>
+
+  <div class="acoes">
+    <label class="modo" hidden><input type="checkbox" id="modo"> Modo mestra (notas e mover para qualquer lugar)</label>
+    <button id="reiniciar" class="sec">Reiniciar mapa</button>
+  </div>
+  <p class="dica">O grupo começa na Entrada. Os locais que brilham são as saídas do ponto onde o grupo está.</p>
+  <p class="rodape">Ordem Paranormal × Mitologia Grega</p>
+
+  <div id="viagem" role="dialog" aria-modal="true">
+    <div class="caixa">
+      <p class="frase" id="v-titulo"></p>
+      <p id="v-texto"></p>
+      <div id="relogio">02:00</div>
+      <div class="barra"><i id="v-barra"></i></div>
+      <div class="botoes"><button id="v-chegar">Chegar agora (mestra)</button><button id="v-cancelar" class="sec">Cancelar viagem (mestra)</button></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===== Ajustes fáceis de mexer =====
+  const INICIO = "entrada";
+  const OBS_AVENIDA = "";
+  const LUGARES = {
+    entrada: { nome: "Entrada", placa: "Entrada", rot: [500, 1100], pin: [500, 1020],
+      tipo: "Chegada ao Labirinto",
+      desc: "Um arco de pedra antiga no fim de um corredor úmido. O ar cheira a metal e poeira, e as paredes parecem respirar devagar.",
+      mestra: "" },
+    salas: { nome: "Salas vivas", placa: "Salas vivas", rot: [230, 842], pin: [230, 760],
+      tipo: "Reagem aos jogadores",
+      desc: "Câmaras de pedra que acompanham cada passo. As paredes se fecham devagar quando alguém hesita, e uma voz conhecida chama de algum canto.",
+      mestra: "" },
+    corredores: { nome: "Corredores móveis", placa: "Corredores móveis", rot: [770, 862], pin: [770, 780],
+      tipo: "O caminho muda com o tempo",
+      desc: "Passagens longas e idênticas. Quando ninguém olha, uma delas some e outra ocupa o lugar.",
+      mestra: "" },
+    portas: { nome: "Portas impossíveis", placa: "Portas impossíveis", rot: [500, 602], pin: [500, 520],
+      tipo: "Portas fora do lugar",
+      desc: "Portas sem parede, portas no teto, portas dentro de outras portas. Cada uma abre para um lugar que não deveria estar ali.",
+      mestra: "" },
+    rota: { nome: "Rota até a Oficina", placa: "Rota até a Oficina", rot: [500, 110], pin: [500, 190],
+      tipo: "O caminho a descobrir",
+      desc: "Um fio de luz quente atravessa a pedra, e ao longe se ouve metal batendo em metal. Ele só aparece para quem sabe onde olhar.",
+      mestra: "" }
+  };
+  const ARESTAS = [
+    { a: "entrada", b: "salas" },
+    { a: "entrada", b: "corredores" },
+    { a: "salas", b: "portas" },
+    { a: "corredores", b: "portas" },
+    { a: "portas", b: "rota" }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const W = 1000, H = 1200;
+  const pct = (v, t) => (v / t * 100) + "%";
+  const achar = (x, y) => ARESTAS.find((e) => (e.a === x && e.b === y) || (e.a === y && e.b === x));
+  const vizinhosDe = (id) => ARESTAS.filter((e) => e.a === id || e.b === id).map((e) => (e.a === id ? e.b : e.a));
+  let aqui, sel, visitados, trilha, viagem = null;
+
+  function falar(t, cls) { $("aviso").textContent = t; $("aviso").className = cls || ""; }
+  const mestra = () => false;
+  const ligados = (a, b) => !!achar(a, b);
+  const podeIr = (id) => !viagem && id !== aqui && (mestra() || ligados(aqui, id));
+
+  // ===== Arte do mapa =====
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  const DEFS = `<radialGradient id="gOr"><stop offset="0" stop-color="#ffd27a" stop-opacity=".95"/><stop offset=".45" stop-color="#ff7a1a" stop-opacity=".5"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient><radialGradient id="gRx"><stop offset="0" stop-color="#e2b8ff" stop-opacity=".95"/><stop offset=".45" stop-color="#7a2fe0" stop-opacity=".5"/><stop offset="1" stop-color="#7a2fe0" stop-opacity="0"/></radialGradient><radialGradient id="gAu"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".8"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient><linearGradient id="gPd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c690"/><stop offset="1" stop-color="#7d6a3c"/></linearGradient><filter id="bl"><feGaussianBlur stdDeviation="4"/></filter>`;
+  const halo = (x, y, r, g) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${g})"/>`;
+  const fio = (pts, cor, w, op, dash) => `<polyline points="${pts}" fill="none" stroke="${cor}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+  const engrenagem = (x, y, r, n, cor) => { let p = []; for (let i = 0; i < n * 2; i++) { const a = i * Math.PI / n, rr = i % 2 ? r * .82 : r; p.push((x + Math.cos(a) * rr).toFixed(1) + "," + (y + Math.sin(a) * rr).toFixed(1)); } return `<polygon points="${p.join(" ")}" fill="${cor}" stroke="#1a140a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="${r * .3}" fill="#0b0907" stroke="#1a140a" stroke-width="2"/>`; };
+  const bussola = () => `<g transform="translate(92 1108)"><circle r="46" fill="#0b0a07" fill-opacity=".75" stroke="#b89646" stroke-width="2"/><polygon points="0,-38 7,-7 38,0 7,7 0,38 -7,7 -38,0 -7,-7" fill="#b89646" stroke="#2a2010" stroke-width="1.5"/><text y="-52" font-family="Georgia,serif" font-size="15" font-weight="bold" fill="#f0e3b4" text-anchor="middle">N</text></g>`;
+
+  function arte() {
+    const R = rng(11);
+    let s = `<defs>${DEFS}</defs><rect width="1000" height="1200" fill="#0b0907"/>`;
+    const C = 20, N = 24, T = 50, vis = new Set([0]), pas = new Set(), pil = [[0, 0]];
+    while (pil.length) {
+      const [c, r] = pil[pil.length - 1];
+      const viz = [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]].filter(([x, y]) => x >= 0 && y >= 0 && x < C && y < N && !vis.has(y * C + x));
+      if (!viz.length) { pil.pop(); continue; }
+      const [x, y] = viz[Math.floor(R() * viz.length)]; vis.add(y * C + x); pas.add(r * C + c + "|" + (y * C + x)); pas.add(y * C + x + "|" + (r * C + c)); pil.push([x, y]);
+    }
+    let d = `M0 0 H1000 V1200 H0 Z`;
+    for (let r = 0; r < N; r++) for (let c = 0; c < C; c++) {
+      if (c < C - 1 && !pas.has(r * C + c + "|" + (r * C + c + 1))) d += `M${(c + 1) * T} ${r * T} v${T}`;
+      if (r < N - 1 && !pas.has(r * C + c + "|" + ((r + 1) * C + c))) d += `M${c * T} ${(r + 1) * T} h${T}`;
+    }
+    s += `<path d="${d}" fill="none" stroke="#5a4528" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b89646" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>`;
+    s += fio("500,1020 230,760 500,520 500,190", "#e5c76b", 4, .3, "3 10") + fio("500,1020 770,780 500,520", "#e5c76b", 4, .3, "3 10");
+    [[500, 1020], [230, 760], [770, 780], [500, 520], [500, 190]].forEach(([x, y]) => { s += `<circle cx="${x}" cy="${y}" r="82" fill="#0b0907" fill-opacity=".94"/>` + halo(x, y, 96, "gAu"); });
+    s += halo(500, 190, 130, "gOr");
+    s += `<path d="M455 1052 V1002 a45 45 0 0 1 90 0 V1052" fill="#14100a" stroke="#b89646" stroke-width="9" stroke-linejoin="round"/><path d="M475 1052 V1004 a25 25 0 0 1 50 0 V1052" fill="#000"/>`;
+    for (let i = 0; i < 6; i++) { const a = i * 1.05 + .3, x = 230 + Math.cos(a) * 52, y = 760 + Math.sin(a) * 52; s += `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="14" ry="7" fill="#e5c76b"><animate attributeName="ry" values="7;1;7" dur="${(2 + R() * 2).toFixed(1)}s" repeatCount="indefinite"/></ellipse><circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="3.5" fill="#0b0907"/>`; }
+    for (let k = 0; k < 3; k++) s += `<polyline points="${740 + k * 6},${742 + k * 22} ${770 + k * 6},${756 + k * 22} ${800 + k * 6},${742 + k * 22}" fill="none" stroke="#e5c76b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${1 - k * .25}"/>`;
+    s += `<path d="M735 820 H805 M735 828 H805" stroke="#b89646" stroke-width="3" stroke-dasharray="8 6"/>`;
+    [[-52, 0], [0, -6], [52, 0]].forEach(([dx, dy], i) => { s += `<g transform="rotate(${(i - 1) * 14} ${500 + dx} ${520 + dy})"><path d="M${500 + dx - 20} ${548 + dy} V${510 + dy} a20 20 0 0 1 40 0 V${548 + dy}Z" fill="#1a1308" stroke="#e5c76b" stroke-width="4"/><circle cx="${500 + dx + 10}" cy="${532 + dy}" r="2.5" fill="#e5c76b"/></g>`; });
+    s += `<path d="M470 214 h60 l-8 -22 h-44z" fill="#c5a653" stroke="#1a140a" stroke-width="2"/><rect x="486" y="168" width="28" height="12" fill="#8a6d28" stroke="#1a140a" stroke-width="2"/>`;
+    s += bussola();
+    $("arte").innerHTML = s;
+  }
+
+  // ===== Interface =====
+  function montar() {
+    let h = "";
+    Object.entries(LUGARES).forEach(([id, l]) => {
+      h += `<button class="rot" data-id="${id}" aria-label="${l.nome}" style="left:${pct(l.rot[0], W)};top:${pct(l.rot[1], H)}">${l.placa}</button>`;
+      h += `<button class="pin" data-id="${id}" aria-label="Local ${l.nome}" style="left:${pct(l.pin[0], W)};top:${pct(l.pin[1], H)}"></button>`;
+    });
+    $("mapa").querySelectorAll(".rot,.pin").forEach((e) => e.remove());
+    $("mapa").insertAdjacentHTML("beforeend", h);
+  }
+  function pontos(de, para) {
+    const e = achar(de, para), meio = e && e.pts ? (e.a === de ? e.pts : e.pts.slice().reverse()) : [];
+    return [LUGARES[de].pin, ...meio, LUGARES[para].pin].map((p) => p.join(",")).join(" ");
+  }
+  function desenhar() {
+    let s = `<defs><marker id="seta" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#e5c76b"/></marker></defs>`;
+    for (let i = 1; i < trilha.length; i++) s += `<polyline points="${pontos(trilha[i - 1], trilha[i])}" fill="none" stroke="#8b286c" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>`;
+    vizinhosDe(aqui).forEach((v) => { s += `<polyline points="${pontos(aqui, v)}" fill="none" stroke="#c23a8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14 10" marker-end="url(#seta)" opacity=".95"><animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite"/></polyline>`; });
+    $("sobre").innerHTML = s;
+
+    $("mapa").querySelectorAll(".rot").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("saida", id !== aqui && ligados(aqui, id)); });
+    $("mapa").querySelectorAll(".pin").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("aqui", id === aqui); b.classList.toggle("visitado", visitados.has(id) && id !== aqui); });
+    $("onde").textContent = LUGARES[aqui].nome;
+    $("cont").textContent = visitados.size + " / " + Object.keys(LUGARES).length;
+
+    const l = LUGARES[sel], ar = achar(aqui, sel);
+    let botao;
+    if (sel === aqui) botao = `<p class="trilha" style="margin-top:12px">O grupo está aqui.</p>`;
+    else if (podeIr(sel)) botao = `<button class="mover" data-mover="${sel}">${ar && ar.tempo ? "Percorrer a avenida (" + ar.tempo / 60 + " min de interação)" : "Mover o grupo para cá"}</button>`;
+    else botao = `<button class="mover" disabled>${l.info ? "Trecho da avenida: siga pelo Museu ou pelo Acampamento" : "Sem caminho direto desde " + LUGARES[aqui].nome}</button>`;
+    $("painel").innerHTML =
+      `<p class="tipo">${l.tipo}</p><h2>${l.nome}</h2><p>${l.desc}</p>` +
+      (l.avenida ? `<div class="obs">${OBS_AVENIDA}</div>` : "") +
+      (mestra() ? `<div class="nota"><b>Para a mestra:</b> ${l.mestra}</div>` : "") +
+      `<h3>Caminhos daqui</h3><div class="saidas">` +
+      (vizinhosDe(sel).length ? vizinhosDe(sel).map((v) => { const e = achar(sel, v); return `<button data-ir="${v}">${LUGARES[v].nome}${e.tempo ? " (avenida, " + e.tempo / 60 + " min)" : ""}</button>`; }).join("") : `<span style="font-size:.85rem;color:#a89f88">Este trecho faz parte da avenida.</span>`) +
+      `</div>${botao}<p class="trilha">Trilha do grupo: ${trilha.map((t) => LUGARES[t].nome).join(" → ")}</p>`;
+  }
+
+  // ===== Movimento e viagem pela avenida =====
+  function chegar(id) {
+    aqui = id; sel = id; visitados.add(id); trilha.push(id);
+    falar("O grupo chega a " + LUGARES[id].nome + ".", "ok"); desenhar();
+  }
+  const mmss = (ms) => { const t = Math.ceil(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  function fimViagem() { if (viagem) { clearInterval(viagem.id); viagem = null; } $("viagem").classList.remove("aberta"); }
+  function viajar(para, ar) {
+    const total = ar.tempo * 1000, fim = Date.now() + total;
+    $("v-titulo").textContent = ar.nome + ": " + LUGARES[aqui].nome + " → " + LUGARES[para].nome;
+    $("v-texto").textContent = "O caminho pela avenida equivale a " + ar.tempo / 60 + " minutos de interação entre os jogadores. Conversem, planejem e interpretem os personagens. Quando o tempo acabar, o grupo chega.";
+    $("v-chegar").hidden = $("v-cancelar").hidden = !mestra();
+    $("relogio").textContent = mmss(total); $("v-barra").style.width = "0%";
+    $("viagem").classList.add("aberta");
+    viagem = { para, fim, id: setInterval(() => {
+      const resta = Math.max(0, fim - Date.now());
+      $("relogio").textContent = mmss(resta); $("v-barra").style.width = (100 - resta / total * 100) + "%";
+      if (resta <= 0) { const d = viagem.para; fimViagem(); chegar(d); }
+    }, 200) };
+    desenhar();
+  }
+  function mover(id) {
+    if (!podeIr(id)) return falar("Não há caminho direto até lá. Os locais que brilham são as saídas.", "erro");
+    const ar = achar(aqui, id);
+    if (ar && ar.tempo) return viajar(id, ar);
+    chegar(id);
+  }
+  function reiniciar() {
+    fimViagem(); aqui = INICIO; sel = INICIO; visitados = new Set([INICIO]); trilha = [INICIO]; falar(""); desenhar();
+  }
+
+  $("mapa").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && !viagem) { sel = b.dataset.id; falar(""); desenhar(); } });
+  $("painel").addEventListener("click", (e) => {
+    const ir = e.target.closest("[data-ir]"); if (ir) { sel = ir.dataset.ir; falar(""); return desenhar(); }
+    const mv = e.target.closest("[data-mover]"); if (mv && !mv.disabled) mover(mv.dataset.mover);
+  });
+  $("v-chegar").addEventListener("click", () => { const d = viagem && viagem.para; fimViagem(); if (d) chegar(d); });
+  $("v-cancelar").addEventListener("click", () => { fimViagem(); falar("A viagem foi cancelada.", "erro"); desenhar(); });
+  $("modo").addEventListener("change", desenhar);
+  $("reiniciar").addEventListener("click", reiniciar);
+  arte(); montar(); reiniciar();
+})();
+</script>
+</body>
+</html>

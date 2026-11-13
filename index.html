@@ -1,0 +1,2001 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>O Oráculo Perdido · Mapas da Campanha</title>
+<style>
+:root {
+  /* painéis e fundo: obsidiana; destaque: ouro de Delfos; Véu: roxo */
+  --branco:#100d15; --branco-fundo:#07050a; --cinza-claro:#1b1624; --cinza:#a9a190; --preto:#ece4d0;
+  --roxo:#d4af5a; --roxo-escuro:#e8c97a; --vinho:#b77ae6; --vinho-escuro:#e4ccff;
+  --ouro:#d4af5a; --ouro-escuro:#8a6a1f; --veu:#7136a8; --sangue:#8b2a3c; --borda:#3a2d16;
+  --degrade:linear-gradient(120deg,#6b4f17,#b8933f 55%,#8a6a1f);
+  --sombra:0 6px 22px rgba(0,0,0,.65);
+  --grega:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='12' viewBox='0 0 24 12'><path d='M0 11H1V1H11V8H4V4H8V6H6' fill='none' stroke='%23b8933f' stroke-width='1.3' stroke-linecap='square'/><path d='M12 11H13V1H23V8H16V4H20V6H18' fill='none' stroke='%23b8933f' stroke-width='1.3' stroke-linecap='square'/></svg>");
+  --serifa:Cinzel,'Trajan Pro','Palatino Linotype',Georgia,serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display:none !important; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:var(--branco-fundo); color:var(--preto); min-height:100vh; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; padding:22px 16px 30px; }
+#cab { width:100%; max-width:1000px; background:var(--branco); padding:16px 24px; text-align:center; border-radius:2px;
+  border:1px solid var(--borda); box-shadow:var(--sombra); }
+.selo { font:700 11px ui-monospace,Consolas,monospace; letter-spacing:.32em; color:var(--ouro); text-transform:uppercase; }
+h1 { color:var(--roxo-escuro); font-family:var(--serifa); font-size:1.6rem; letter-spacing:.08em; text-transform:uppercase; }
+.sub { color:var(--cinza); font-size:.95rem; max-width:40em; margin:2px auto 0; }
+.greca { display:none; }
+.hud { display:flex; gap:18px; font-size:1rem; align-items:center; flex-wrap:wrap; justify-content:center; color:var(--cinza); }
+.hud b { color:var(--roxo-escuro); font-variant-numeric:tabular-nums; }
+.pill { padding:3px 12px; border:1px solid var(--ouro); color:var(--ouro); border-radius:2px; font-size:.9rem; font-weight:700; background:var(--branco); }
+#aviso { min-height:1.4em; text-align:center; max-width:40em; line-height:1.4; color:var(--cinza); font-style:italic; }
+#aviso.ok { color:var(--ouro); font-style:normal; } #aviso.erro { color:#ff7a8e; }
+#aviso.memorize { color:var(--vinho); font-style:normal; font-weight:700; }
+.dica { font-size:.85rem; color:var(--cinza); text-align:center; max-width:40em; }
+.rodape { width:100%; max-width:1000px; padding:16px; text-align:center; font-size:.8rem; color:var(--cinza); background:var(--branco); border-top:1px solid var(--borda); }
+.acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:700; font-size:14px; letter-spacing:.05em; padding:10px 22px; background:transparent; color:var(--roxo-escuro); border:1.5px solid var(--ouro); border-radius:2px; cursor:pointer; transition:.25s; }
+button:hover:not(:disabled) { background:var(--ouro); color:#120e06; box-shadow:0 0 18px rgba(212,175,90,.4); }
+button:disabled { opacity:.45; cursor:default; }
+button.sec { background:transparent; color:var(--cinza); border-color:var(--borda); }
+#vitoria, #viagem { position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,6,.92); padding:20px; z-index:6; }
+#vitoria.aberta, #viagem.aberta { display:grid; }
+.caixa { text-align:center; max-width:30em; padding:28px 26px; background:var(--branco); border-radius:2px; box-shadow:0 0 40px rgba(212,175,90,.18); border:1.5px solid var(--ouro); color:var(--preto); }
+.caixa p.frase { color:var(--roxo-escuro); font-family:var(--serifa); font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; line-height:1.35; margin:0 0 18px; }
+.caixa p.frase.derrota { color:#ff7a8e; }
+::-webkit-scrollbar { width:9px; } ::-webkit-scrollbar-track { background:#0a0810; }
+::-webkit-scrollbar-thumb { background:var(--degrade); border-radius:2px; }
+::selection { background:var(--ouro); color:#120e06; }
+ 
+header { background:var(--branco); padding:20px 40px 0; border-bottom:1px solid var(--borda); box-shadow:var(--sombra); position:relative; }
+header::after { content:""; display:block; height:12px; margin:0 -40px; background:var(--grega) repeat-x left center; opacity:.85; border-top:1px solid var(--borda); }
+header .selo { font:700 11px ui-monospace,Consolas,monospace; letter-spacing:.32em; color:var(--ouro); text-transform:uppercase; }
+header h1 { color:var(--roxo-escuro); font-size:28px; }
+header .sub { color:var(--cinza); font-size:.95rem; max-width:48em; margin:0 0 12px; }
+nav { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+nav button.aba { background:none; color:var(--cinza); border:0; border-radius:2px 2px 0 0; padding:10px 16px; font-family:var(--serifa); font-size:14px; letter-spacing:.06em; text-transform:uppercase; border-bottom:3px solid transparent; box-shadow:none; }
+nav button.aba:hover { color:var(--vinho); background:#17121f; box-shadow:none; }
+nav button.aba[aria-selected="true"] { color:var(--roxo-escuro); background:#17121f; border-bottom-color:var(--ouro); }
+nav button.aba.bloq { opacity:.5; }
+nav .sep { width:1px; background:#2f2342; margin:8px 6px; }
+main { padding:30px 35px; max-width:1180px; margin:0 auto; }
+section { background:var(--branco); padding:25px; border-radius:2px; box-shadow:var(--sombra); margin-bottom:25px; border:1px solid var(--borda); border-top:2px solid var(--ouro-escuro); }
+h2,h3 { color:var(--roxo-escuro); font-family:var(--serifa); letter-spacing:.04em; margin-bottom:15px; }
+input,select,textarea { width:100%; padding:12px; border:1px solid var(--borda); border-radius:2px; background:#0a0810; color:var(--preto); outline:none; transition:.25s; font:inherit; }
+input:focus,select:focus,textarea:focus { border-color:var(--ouro); box-shadow:0 0 0 3px rgba(212,175,90,.15); }
+textarea { min-height:150px; resize:vertical; }
+.grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; }
+.card { background:var(--branco); border:1px solid var(--borda); border-left:4px solid var(--ouro); border-radius:2px; padding:20px; box-shadow:var(--sombra); transition:.25s; cursor:pointer; text-align:left; color:var(--preto); letter-spacing:0; }
+.card:hover:not(:disabled) { transform:translateY(-4px); border-left-color:var(--vinho); background:#17121f; color:var(--preto); box-shadow:0 8px 26px rgba(113,54,168,.35); }
+.card h3 { margin-bottom:4px; font-size:1.05rem; } .card p { color:var(--cinza); font-size:.9rem; font-weight:400; }
+.card.bloq { opacity:.55; cursor:default; } .card.bloq:hover { transform:none; border-left-color:var(--ouro); }
+.destaque { background:linear-gradient(120deg,#3a1a5c,#5a1f3e); color:#fff; padding:22px; border:1px solid var(--ouro-escuro); border-radius:2px; margin-bottom:25px; position:relative; }
+.destaque::after { content:""; position:absolute; left:0; right:0; bottom:0; height:12px; background:var(--grega) repeat-x center; opacity:.55; }
+.destaque h2 { color:var(--roxo-escuro); margin-bottom:6px; padding-bottom:6px; }
+.painel2 { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+@media (max-width:800px) { .painel2 { grid-template-columns:1fr; } main { padding:18px 12px; } header { padding:16px 16px 0; } header::after { margin:0 -16px; } }
+ul.leg { padding-left:20px; color:var(--cinza); font-size:.92rem; } ul.leg li { margin-bottom:6px; }
+.peq { font-size:.8rem; color:var(--cinza); margin-top:8px; }
+.mapa-quadro { border-radius:2px; overflow:hidden; border:1px solid var(--ouro-escuro); box-shadow:var(--sombra); margin-bottom:25px; background:var(--branco-fundo); }
+iframe { display:block; width:100%; height:1900px; border:0; }
+.filtros { display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:18px; }
+.rol { overflow-x:auto; border-radius:2px; border:1px solid var(--borda); margin-bottom:22px; }
+table { width:100%; min-width:640px; border-collapse:collapse; background:var(--branco); font-size:.92rem; }
+thead { background:var(--degrade); color:#fff6d8; }
+thead th { font-family:var(--serifa); letter-spacing:.05em; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+th,td { padding:12px 14px; text-align:left; border-bottom:1px solid #251d12; vertical-align:top; }
+tbody tr:hover { background:#17121f; }
+td.nome { font-weight:700; color:var(--roxo-escuro); }
+.tag { display:inline-block; padding:2px 10px; border-radius:2px; border:1px solid var(--ouro-escuro); background:#17121f; color:var(--roxo-escuro); font-size:.78rem; font-weight:700; white-space:nowrap; }
+.vazio { color:var(--cinza); padding:12px 0; }
+h3.grupo { margin:6px 0 10px; }
+footer { padding:20px; text-align:center; color:var(--cinza); background:var(--branco); border-top:1px solid var(--borda); font:700 11px ui-monospace,Consolas,monospace; letter-spacing:.25em; text-transform:uppercase; }
+footer::before { content:""; display:block; height:12px; margin:-8px 0 14px; background:var(--grega) repeat-x center; opacity:.6; }
+ 
+/* ===== Fundo: mármore negro com veios dourados e névoa do Véu ===== */
+html { background:#07050a; scroll-behavior:smooth; }
+body { background:transparent; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' viewBox='0 0 1600 1000'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%23b8933f' stop-opacity='0'/><stop offset='.3' stop-color='%23d4af5a'/><stop offset='.6' stop-color='%238a6a1f'/><stop offset='.85' stop-color='%23e8c97a'/><stop offset='1' stop-color='%23b8933f' stop-opacity='0'/></linearGradient></defs><g transform='rotate(-38 800 500) scale(1.5)'><path d='M-900 120 C-400 100 -200 190 300 150 S1200 120 1900 170' fill='none' stroke='url(%23g)' stroke-width='1' opacity='.45'/><path d='M-900 330 C-300 360 100 280 600 330 S1400 360 1900 320' fill='none' stroke='url(%23g)' stroke-width='1.2' opacity='.6'/><path d='M-900 520 C-500 500 -100 570 400 520 S1300 480 1900 540' fill='none' stroke='url(%23g)' stroke-width='.8' opacity='.4'/><path d='M-900 700 C-300 740 200 660 700 710 S1500 740 1900 690' fill='none' stroke='url(%23g)' stroke-width='1' opacity='.5'/><path d='M-900 880 C-400 860 0 920 500 880 S1300 850 1900 890' fill='none' stroke='url(%23g)' stroke-width='.8' opacity='.35'/></g></svg>") center/cover no-repeat; }
+body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(212,175,90,.07), transparent 55%), radial-gradient(ellipse at 100% 100%, rgba(113,54,168,.18), transparent 55%), radial-gradient(ellipse at 0% 80%, rgba(139,42,60,.1), transparent 50%); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--ouro); outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+ 
+.livro .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.livro .chip { padding:6px 12px; font-size:13px; background:var(--cinza-claro); color:var(--roxo-escuro); border:1px solid var(--borda); }
+.livro .chip[aria-selected="true"] { background:var(--degrade); color:#fff6d8; border-color:var(--ouro); }
+.livro select { width:100%; padding:10px; margin-bottom:14px; background:var(--cinza-claro); color:var(--preto); border:1px solid var(--borda); border-radius:2px; font:inherit; display:none; }
+.livro .cap h2 { margin-bottom:12px; }
+.livro .cap h3 { color:var(--roxo-escuro); margin:22px 0 8px; font-size:1.15rem; }
+.livro .cap h4 { color:var(--vinho); margin:16px 0 6px; }
+.livro .cap p { margin:0 0 10px; }
+.livro .cap ul, .livro .cap ol { margin:0 0 12px 22px; }
+.livro .cap li { margin-bottom:5px; }
+.livro .cap .rol { margin:10px 0 16px; }
+.livro .cap table { min-width:0; }
+.livro .cap blockquote { border-left:3px solid var(--ouro); padding:6px 14px; margin:0 0 12px; background:#17121f; }
+.livro a { color:var(--roxo-escuro); }
+@media (max-width:700px) { .livro .chips { display:none; } .livro select { display:block; } }#m-form { display:flex; gap:10px; flex-wrap:wrap; max-width:420px; margin-top:14px; }
+#m-form input { flex:1 1 200px; width:auto; }
+#m-aviso { min-height:1.4em; color:#ff9a8e; }
+#m-aberto .acoes { margin-bottom:14px; justify-content:flex-end; }
+#m-abas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+#m-abas button { padding:8px 16px; background:var(--cinza-claro); color:var(--roxo-escuro); border:1px solid #34254a; }
+#m-abas button[aria-selected="true"] { background:var(--degrade); color:#fff; border-color:transparent; }
+#m-docs .chip { font-size:13px; }
+#m-frame { display:block; width:100%; height:2400px; border:1px solid var(--ouro-escuro); background:var(--branco-fundo); }
+</style></head><body style="display:block;padding:0">
+<header><p class="selo">Ordem · Campanha</p><h1>O Oráculo Perdido</h1>
+<p class="sub">Mapas, bestiário, itens e livro do jogador. Escolha uma aba.</p>
+<nav id="abas" role="tablist" aria-label="Seções"></nav></header>
+<main>
+ <div id="p-inicio" hidden></div>
+ <div id="p-mapa" hidden>
+  <div class="mapa-quadro"><iframe id="mapa" title="Mapa" loading="lazy"></iframe></div>
+  <div class="painel2">
+   <section><h2 id="t-obs">Observações</h2><ul class="leg" id="obs"></ul>
+    <h3 style="margin-top:16px">Como usar</h3>
+    <ul class="leg"><li>Clique em um local para ler a descrição.</li><li><b>Locais que brilham</b> são as saídas do ponto onde o grupo está.</li><li><b>⚑</b> marca onde o grupo está e <b>✓</b> os lugares já visitados.</li><li>O botão <b>Reiniciar mapa</b> volta ao ponto de partida.</li></ul></section>
+   <section><h2>Minhas anotações</h2><textarea id="notas" placeholder="Pistas, nomes, perguntas..."></textarea><p class="peq">As anotações ficam salvas só neste navegador, uma por mapa.</p></section>
+  </div>
+ </div>
+ <div id="p-bestiario" hidden>
+  <section><h2>Bestiário</h2><p class="peq" style="margin:-8px 0 14px">Criaturas do Outro Lado. NA = Nível de Ameaça (C capanga, P padrão, E elite, B chefe). Def = Defesa, Atq = bônus de ataque.</p>
+   <div class="filtros"><input id="b-busca" type="search" placeholder="Buscar criatura ou habilidade..." aria-label="Buscar criatura"><select id="b-tipo" aria-label="Filtrar por tipo"><option value="">Todos os tipos</option><option value="C">Capanga</option><option value="P">Padrão</option><option value="E">Elite</option><option value="B">Chefe</option></select></div>
+   <div id="b-lista"></div></section>
+ </div>
+ <div id="p-itens" hidden>
+  <section><h2>Itens</h2><p class="peq" style="margin:-8px 0 14px">Armas, armaduras e acessórios por raridade, mais consumíveis.</p>
+   <div class="filtros"><input id="i-busca" type="search" placeholder="Buscar item, tipo ou propriedade..." aria-label="Buscar item"><select id="i-rar" aria-label="Filtrar por raridade"><option value="">Todas as raridades</option></select></div>
+   <div id="i-lista"></div></section>
+ </div>
+<div id="p-livro" hidden>
+  <section class="livro"><h2>Livro do Jogador</h2>
+   <p class="peq" style="margin:-8px 0 14px">Regras, poderes e criação de personagem. <a href="Livro_do_Jogador.docx" download>Baixar em Word (.docx)</a></p>
+   <div class="chips" id="l-chips" role="tablist" aria-label="Capítulos"><button class="chip" data-cap="0">1</button><button class="chip" data-cap="1">2</button><button class="chip" data-cap="2">3</button><button class="chip" data-cap="3">4</button><button class="chip" data-cap="4">5</button><button class="chip" data-cap="5">6</button><button class="chip" data-cap="6">7</button><button class="chip" data-cap="7">8</button><button class="chip" data-cap="8">9</button><button class="chip" data-cap="9">10</button><button class="chip" data-cap="10">11</button><button class="chip" data-cap="11">12</button><button class="chip" data-cap="12">13</button><button class="chip" data-cap="13">14</button><button class="chip" data-cap="14">15</button></div>
+   <select id="l-sel" aria-label="Capítulo"><option value="0">1. Bem-vindo ao jogo</option><option value="1">2. O mundo</option><option value="2">3. Deuses, linhagens e o Acampamento</option><option value="3">4. Atributos e testes</option><option value="4">5. Perícias</option><option value="5">6. PV, PE, SAN e NEX</option><option value="6">7. Níveis 1 a 7</option><option value="7">8. Combate</option><option value="8">9. Poderes</option><option value="9">10. Poderes por linhagem</option><option value="10">11. Equipamentos e itens</option><option value="11">12. Descanso, dinheiro e viagens</option><option value="12">13. Como montar sua ficha</option><option value="13">14. Convivência na mesa</option><option value="14">15. Resumo de uma página</option></select>
+   <article class="cap" data-cap="0" hidden><h2>1. Bem-vindo ao jogo</h2>
+<p><strong>O Oráculo Perdido</strong> é uma campanha de RPG de fantasia mitológica. Você interpreta um semideus: filho ou filha de um deus grego e de um mortal. Seu personagem vai compreender suas origens, desenvolver seus poderes e enfrentar acontecimentos que ameaçam o equilíbrio entre os mundos.</p>
+<p>O sistema é próprio e usa atributos, PV (pontos de vida), PE (pontos de energia), SAN (sanidade) e NEX (exposição ao Outro Lado). A campanha combina exploração, investigação, combate e relações entre personagens. Suas decisões, alianças e interpretações pesam tanto quanto a força do seu personagem.</p>
+<h2>1.1 Como o jogo funciona</h2>
+<ul>
+<li><p>A <strong>mestra</strong> apresenta o mundo, interpreta os personagens que não são jogadores, controla as ameaças e decide como o universo reage ao que vocês fazem.</p></li>
+<li><p>Suas decisões têm consequências coerentes. As regras são aplicadas da mesma forma para todos.</p></li>
+<li><p>Os personagens podem descobrir informações em ritmos diferentes. Nem tudo o que um personagem sabe é conhecido pelos outros, e está tudo bem assim.</p></li>
+<li><p>A origem divina influencia a história e os poderes, mas não define a personalidade do seu personagem.</p></li>
+<li><p>A raridade de uma linhagem não dá superioridade automática sobre as outras.</p></li>
+<li><p>A história completa é montada durante as sessões. Mistérios fazem parte da experiência.</p></li>
+</ul>
+<h2>1.2 O que você precisa saber para jogar</h2>
+<p>Você só precisa de um d20, dados de seis e oito lados (d6 e d8, e d10 para armas pesadas), um lápis e a sua ficha. Este livro explica tudo o que seu personagem pode fazer. Leia primeiro os capítulos 4 a 8 e depois o capítulo da sua linhagem.</p>
+</article><article class="cap" data-cap="1" hidden><h2>2. O mundo</h2>
+<h2>2.1 Os três mundos</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Mundo</strong></th>
+<th><strong>Descrição</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mundo Atual</td>
+<td>O mundo dos mortais, protegido pela Névoa. Inclui Nova York e Long Island.</td>
+</tr>
+<tr class="even">
+<td>Mundo Antigo</td>
+<td>Eco do passado grego. Lugares como Delfos ainda existem ali de forma parcial. O acesso é feito por portais.</td>
+</tr>
+<tr class="odd">
+<td>Outro Lado</td>
+<td>Reino além do Véu, de onde vêm os monstros.</td>
+</tr>
+</tbody>
+</table></div>
+<p>O <strong>Véu</strong> é a membrana entre os mundos. Os <strong>portais</strong> ligam o Mundo Atual ao Mundo Antigo e ao Outro Lado, e podem estar abertos, parcialmente abertos ou fechados.</p>
+<h2>2.2 A Névoa</h2>
+<p>A Névoa é uma força sobrenatural que altera a percepção dos humanos comuns (os mundanos) para que interpretem acontecimentos mitológicos como situações normais. Ela esconde a verdadeira natureza do mundo sobrenatural.</p>
+<ul>
+<li><p>Tudo é afetado pela Névoa: acontecimentos, criaturas, manifestações e registros. Fotos, gravações e câmeras também.</p></li>
+<li><p>Exemplo: se um minotauro bater em um caminhão numa avenida, os mundanos podem ver um acidente de trânsito comum.</p></li>
+<li><p>A Névoa não garante que nenhuma consequência aconteça. Ela engana os mundanos, e a mestra decide como isso aparece em cada situação.</p></li>
+</ul>
+<h2>2.3 Ambientação</h2>
+<p>A campanha se passa em <strong>2010</strong>. Os principais cenários são o Acampamento Meio-Sangue (em Long Island), Nova York e os portais para o Mundo Antigo. A economia usa dólares e dracmas.</p>
+</article><article class="cap" data-cap="2" hidden><h2>3. Deuses, linhagens e o Acampamento</h2>
+<h2>3.1 Os deuses e seus filhos</h2>
+<p>Os deuses não interferem diretamente na vida cotidiana dos mortais. Eles falam com os semideuses por <strong>sonhos</strong> ou, em raras ocasiões, <strong>presencialmente, no Olimpo</strong>. A relação entre um deus e seus filhos costuma ser distante. Ser reconhecido não garante proximidade, afeto demonstrado ou ajuda imediata. Essa distância faz parte do funcionamento do universo.</p>
+<p>O <strong>Conselho dos Doze</strong> reúne Zeus, Poseidon, Hades, Hera, Deméter, Atena, Apolo, Ártemis, Ares, Afrodite, Hefesto e Hermes. Nesta campanha, Hades conta entre os três grandes deuses. Os deuses menores também são possíveis origens para semideuses.</p>
+<h2>3.2 Linhas de raridade e aura</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Linha</strong></th>
+<th><strong>Linhagens</strong></th>
+<th><strong>Aura</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Hades, Poseidon, Zeus</td>
+<td>A mais intensa</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Atena, Ares, Hefesto, Apolo</td>
+<td>Significativa, abaixo da Linha 1</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Demais deuses do Conselho dos Doze</td>
+<td>Moderada</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Deuses menores</td>
+<td>A menor</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><p>Monstros do Outro Lado sentem a aura dos semideuses. Quanto mais rara a linhagem, mais intensa a aura.</p></li>
+<li><p>Perceber uma aura não significa atacar. A reação depende da criatura, de suas intenções e da situação.</p></li>
+<li><p>A raridade <strong>não</strong> determina força física, PV nem superioridade em combate.</p></li>
+</ul>
+<h2>3.3 Reclamação divina</h2>
+<p>A Reclamação é o momento em que um deus reconhece seu descendente e confirma publicamente a linhagem. Cada Reclamação é única, mas <strong>o símbolo do deus sempre aparece</strong> de forma reconhecível.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Divindade</strong></th>
+<th><strong>Símbolo</strong></th>
+<th><strong>Divindade</strong></th>
+<th><strong>Símbolo</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zeus</td>
+<td>Raio</td>
+<td>Hermes</td>
+<td>Caduceu</td>
+</tr>
+<tr class="even">
+<td>Poseidon</td>
+<td>Tridente</td>
+<td>Ártemis</td>
+<td>Arco e flecha</td>
+</tr>
+<tr class="odd">
+<td>Hades</td>
+<td>Elmo das Trevas</td>
+<td>Deméter</td>
+<td>Espiga de trigo</td>
+</tr>
+<tr class="even">
+<td>Atena</td>
+<td>Coruja</td>
+<td>Hera</td>
+<td>Pavão</td>
+</tr>
+<tr class="odd">
+<td>Ares</td>
+<td>Lança</td>
+<td>Afrodite</td>
+<td>Pomba</td>
+</tr>
+<tr class="even">
+<td>Hefesto</td>
+<td>Martelo de ferreiro</td>
+<td>Dionísio</td>
+<td>Videira</td>
+</tr>
+<tr class="odd">
+<td>Apolo</td>
+<td>Lira</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>Depois da Reclamação, o semideus é encaminhado ao alojamento da linhagem. A revelação não explica todos os poderes nem as responsabilidades que vêm com eles.</p>
+<h2>3.4 Leis divinas</h2>
+<p>As leis divinas valem mais do que as regras do dia a dia do Acampamento. Uma infração gera consequências proporcionais à gravidade, à intenção e aos danos.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Grau</strong></th>
+<th><strong>Tipo</strong></th>
+<th><strong>Consequências possíveis</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Advertência divina</td>
+<td>Sonho perturbador, mensagem exigindo explicações, perda temporária de confiança</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Social ou institucional</td>
+<td>Suspensão de atividades, reparação de danos, perda de privilégios, resposta à liderança do Acampamento</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Sobrenatural</td>
+<td>Missão de reparação, marca sobrenatural, julgamento divino, perda temporária de um privilégio sobrenatural</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Punição divina grave</td>
+<td>Reparações extraordinárias, hostilidade explícita de uma divindade, maldição temporária, consequências por várias sessões</td>
+</tr>
+</tbody>
+</table></div>
+<h2>3.5 O Acampamento Meio-Sangue</h2>
+<p>O Acampamento é um espaço de proteção, convivência e treinamento. Ele acolhe semideuses, os protege de ameaças externas, organiza os alojamentos por linhagem, ensina combate e sobrevivência e prepara os campistas para missões.</p>
+<ul>
+<li><p><strong>Estrutura:</strong> Casa Grande (administração e orientação), Refeitório, Alojamentos divinos, Arena de treinamento, áreas de atividades, Fogueira central, Floresta dos Monstros, Pinheiro de Thalia, Entrada principal e áreas de armazenamento.</p></li>
+<li><p><strong>Autoridade:</strong> o diretor é Dionísio (o Sr. D) e Quíron é o mentor e treinador.</p></li>
+<li><p><strong>Barreira:</strong> protege o Acampamento. Semideuses e criaturas aliadas entram, e criaturas inimigas e humanos mundanos são impedidos. A decisão é automática.</p></li>
+<li><p><strong>Alojamentos:</strong> um para cada linhagem. Funcionam como espaço de descanso, convivência e identificação entre descendentes do mesmo deus. A raridade de uma linhagem não dá autoridade sobre os outros campistas.</p></li>
+<li><p><strong>Recém-chegados:</strong> quem ainda não foi identificado recebe um local provisório para dormir, refeições, orientações e participa das atividades permitidas. Não ser identificado de imediato não torna ninguém inferior.</p></li>
+<li><p><strong>Áreas restritas:</strong> arsenais, depósitos, áreas de pesquisa e locais de contenção podem exigir autorização.</p></li>
+</ul>
+<h3>Rotina diária</h3>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Horário</strong></th>
+<th><strong>Atividade</strong></th>
+<th><strong>Horário</strong></th>
+<th><strong>Atividade</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>06h30</td>
+<td>Despertar e organização dos alojamentos</td>
+<td>15h00</td>
+<td>Atividades livres e convivência</td>
+</tr>
+<tr class="even">
+<td>07h00</td>
+<td>Café da manhã</td>
+<td>17h00</td>
+<td>Atividades coletivas</td>
+</tr>
+<tr class="odd">
+<td>08h00</td>
+<td>Treinamento físico e combate</td>
+<td>19h00</td>
+<td>Jantar</td>
+</tr>
+<tr class="even">
+<td>10h00</td>
+<td>Treinamento especializado</td>
+<td>20h00</td>
+<td>Tempo livre</td>
+</tr>
+<tr class="odd">
+<td>12h00</td>
+<td>Almoço</td>
+<td>22h00</td>
+<td>Recolher</td>
+</tr>
+<tr class="even">
+<td>13h00</td>
+<td>Atividades orientadas</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>A mestra pode mudar os horários em dias de missão ou de eventos. A rotina não precisa ser narrada inteira.</p>
+<h3>Regras gerais de convivência</h3>
+<p>Os campistas respeitam os responsáveis, usam armas e equipamentos de forma apropriada, evitam colocar outros em perigo, respeitam pertences e alojamentos alheios, cumprem as orientações sobre áreas restritas, comunicam saídas que envolvam riscos mitológicos e evitam que conflitos pessoais coloquem o grupo em risco.</p>
+<h3>Treinamentos</h3>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Treinamento</strong></th>
+<th><strong>Conteúdo</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Combate corpo a corpo</td>
+<td>Ataque, defesa, esquiva, posicionamento e leitura dos movimentos do adversário</td>
+</tr>
+<tr class="even">
+<td>Armas</td>
+<td>Familiarização, precisão, controle, defesa e posicionamento</td>
+</tr>
+<tr class="odd">
+<td>Arquearia e combate à distância</td>
+<td>Pontaria, concentração, cálculo de distância e armas de longo alcance</td>
+</tr>
+<tr class="even">
+<td>Estratégia e trabalho em equipe</td>
+<td>Observar o campo, reconhecer vantagens e desvantagens, proteger aliados e planejar ações conjuntas</td>
+</tr>
+<tr class="odd">
+<td>Controle de poderes</td>
+<td>Ativação consciente, controle do gasto de PE, precisão e alcance, limitações e coordenação com o combate físico</td>
+</tr>
+<tr class="even">
+<td>Sobrevivência e conhecimento mitológico</td>
+<td>Reconhecer ameaças, compreender criaturas, avaliar riscos e decidir em ambientes desconhecidos</td>
+</tr>
+</tbody>
+</table></div>
+</article><article class="cap" data-cap="3" hidden><h2>4. Atributos e testes</h2>
+<p>Todo personagem tem cinco atributos:</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Atributo</strong></th>
+<th><strong>Área</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AGI — Agilidade</td>
+<td>Rapidez, coordenação e movimentação</td>
+</tr>
+<tr class="even">
+<td>FOR — Força</td>
+<td>Força física e esforço muscular</td>
+</tr>
+<tr class="odd">
+<td>INT — Inteligência</td>
+<td>Raciocínio, conhecimento e análise</td>
+</tr>
+<tr class="even">
+<td>PRE — Presença</td>
+<td>Presença e influência pessoal</td>
+</tr>
+<tr class="odd">
+<td>VIG — Vigor</td>
+<td>Resistência e capacidade de suportar esforço</td>
+</tr>
+</tbody>
+</table></div>
+<h2>4.1 Testes</h2>
+<p>Para tentar algo incerto, role <strong>d20 + atributo + bônus</strong> e compare com a dificuldade (DT). A mestra escolhe o atributo conforme o objetivo da ação e a forma como você pretende realizá-la.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Dificuldade</strong></th>
+<th><strong>DT</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fácil</td>
+<td>10</td>
+</tr>
+<tr class="even">
+<td>Moderada</td>
+<td>15</td>
+</tr>
+<tr class="odd">
+<td>Difícil</td>
+<td>20</td>
+</tr>
+<tr class="even">
+<td>Muito difícil</td>
+<td>25</td>
+</tr>
+<tr class="odd">
+<td>Extrema</td>
+<td>30</td>
+</tr>
+</tbody>
+</table></div>
+<p>Um bom plano ou uma circunstância favorável dá <strong>+2</strong>. Uma situação ruim dá <strong>-2</strong>. Poderes e itens que já trazem a própria DT mantêm essa DT.</p>
+<h2>4.2 Empates</h2>
+<ul>
+<li><p>Quando um jogador ataca, o jogador vence o empate.</p></li>
+<li><p>Quando um personagem se defende de um inimigo, o inimigo vence o empate.</p></li>
+</ul>
+<h2>4.3 Traço de origem</h2>
+<p>Todo personagem de jogador tem <strong>um Traço</strong>: um bônus de <strong>+2 em uma situação específica</strong>, usado à vontade. O Traço nasce do passado do seu personagem e é combinado com a mestra na criação. Exemplo de formato: "+2 ao tentar acalmar animais, porque cresci em uma fazenda".</p>
+</article><article class="cap" data-cap="4" hidden><h2>5. Perícias</h2>
+<p>Perícias são áreas em que seu personagem recebeu treino. Quando você faz um teste em que uma perícia faz sentido, soma o <strong>bônus do grau da perícia</strong> ao teste, além do atributo. A mestra decide se a perícia se aplica à situação.</p>
+<h2>5.1 Graus de perícia</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Grau</strong></th>
+<th><strong>Bônus no teste</strong></th>
+<th><strong>Como se obtém</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sem treino</td>
+<td>+0</td>
+<td>Perícia que você não treinou</td>
+</tr>
+<tr class="even">
+<td>Treinado</td>
+<td>+5</td>
+<td>Ao aprender a perícia</td>
+</tr>
+<tr class="odd">
+<td>Veterano</td>
+<td>+10</td>
+<td>Aprimorando uma perícia Treinada</td>
+</tr>
+<tr class="even">
+<td>Expert</td>
+<td>+15</td>
+<td>Aprimorando uma perícia Veterana</td>
+</tr>
+</tbody>
+</table></div>
+<p>O bônus <strong>não se soma</strong> entre graus. Uma perícia Veterana dá +10 no total, e não +5 mais +10.</p>
+<h2>5.2 Quantas perícias você tem</h2>
+<ul>
+<li><p>No <strong>nível 1</strong>, você começa com <strong>3 perícias</strong> treinadas.</p></li>
+<li><p>Dos níveis 2 ao 4, você aprende <strong>+2 perícias por nível</strong>. No <strong>nível 4</strong>, chega ao máximo de <strong>9 perícias treinadas</strong>. Esse número não passa de 9.</p></li>
+<li><p>A partir do <strong>nível 5</strong>, você não aprende mais perícias novas. Em vez disso, ganha <strong>+2 aprimoramentos por nível</strong> (níveis 5, 6 e 7).</p></li>
+<li><p>Cada aprimoramento sobe <strong>um grau</strong> de uma perícia que você já tem: de Treinado para Veterano (+10) ou de Veterano para Expert (+15).</p></li>
+<li><p>Você pode aprimorar a mesma perícia duas vezes (Treinado, depois Veterano, depois Expert). Não dá para pular um grau.</p></li>
+</ul>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Nível</strong></th>
+<th><strong>1</strong></th>
+<th><strong>2</strong></th>
+<th><strong>3</strong></th>
+<th><strong>4</strong></th>
+<th><strong>5</strong></th>
+<th><strong>6</strong></th>
+<th><strong>7</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Perícias treinadas (total)</td>
+<td>3</td>
+<td>5</td>
+<td>7</td>
+<td>9</td>
+<td>9</td>
+<td>9</td>
+<td>9</td>
+</tr>
+<tr class="even">
+<td>Aprimoramentos ganhos (acumulado)</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>4</td>
+<td>6</td>
+</tr>
+</tbody>
+</table></div>
+<p>No nível 7, com 9 perícias e 6 aprimoramentos, você pode, por exemplo, ter 3 perícias Expert e 6 Treinadas, ou 6 perícias Veteranas e 3 Treinadas. Escolha o que combina com a história do seu personagem.</p>
+<h2>5.3 Lista de perícias</h2>
+<p>Cada perícia tem um atributo de referência. É o atributo mais comum, e a mestra pode pedir outro se a ação pedir.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Perícia</strong></th>
+<th><strong>Atributo</strong></th>
+<th><strong>Para que serve</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Acrobacia</td>
+<td>AGI</td>
+<td>Equilíbrio, saltos, cambalhotas e escapar de agarrões</td>
+</tr>
+<tr class="even">
+<td>Furtividade</td>
+<td>AGI</td>
+<td>Mover-se sem ser notado, esconder-se, passar despercebido</td>
+</tr>
+<tr class="odd">
+<td>Montaria e pilotagem</td>
+<td>AGI</td>
+<td>Cavalgar pégasos e cavalos, guiar veículos e embarcações</td>
+</tr>
+<tr class="even">
+<td>Atletismo</td>
+<td>FOR</td>
+<td>Escalar, nadar, correr, saltar longe, empurrar e levantar peso</td>
+</tr>
+<tr class="odd">
+<td>Investigação</td>
+<td>INT</td>
+<td>Procurar pistas, ligar informações, examinar locais e documentos</td>
+</tr>
+<tr class="even">
+<td>Mitologia</td>
+<td>INT</td>
+<td>Conhecimento sobre deuses, heróis, criaturas e lendas gregas</td>
+</tr>
+<tr class="odd">
+<td>Medicina</td>
+<td>INT</td>
+<td>Primeiros socorros, tratar ferimentos e reconhecer venenos</td>
+</tr>
+<tr class="even">
+<td>Mecanismos e ofícios</td>
+<td>INT</td>
+<td>Consertar, forjar, abrir fechaduras e entender engenhos</td>
+</tr>
+<tr class="odd">
+<td>Ocultismo</td>
+<td>INT</td>
+<td>Rituais, símbolos, magia e o sobrenatural</td>
+</tr>
+<tr class="even">
+<td>Percepção</td>
+<td>INT</td>
+<td>Notar detalhes, ouvir ruídos e perceber perigos</td>
+</tr>
+<tr class="odd">
+<td>Persuasão</td>
+<td>PRE</td>
+<td>Convencer, negociar, acalmar e inspirar</td>
+</tr>
+<tr class="even">
+<td>Enganação</td>
+<td>PRE</td>
+<td>Mentir, blefar, disfarçar-se e distrair</td>
+</tr>
+<tr class="odd">
+<td>Intimidação</td>
+<td>PRE</td>
+<td>Impor respeito, ameaçar e forçar uma retirada</td>
+</tr>
+<tr class="even">
+<td>Resistência</td>
+<td>VIG</td>
+<td>Suportar dor, fadiga, venenos, frio e calor</td>
+</tr>
+<tr class="odd">
+<td>Sobrevivência</td>
+<td>VIG</td>
+<td>Rastrear, orientar-se, achar abrigo e comida</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Dica de criação:</strong> escolha perícias que combinem com a história do seu personagem. Um ex-morador de rua pode ter Furtividade e Sobrevivência. Uma pessoa que cresceu entre livros pode ter Mitologia e Investigação.</p>
+</blockquote>
+</article><article class="cap" data-cap="5" hidden><h2>6. PV, PE, SAN e NEX</h2>
+<h2>6.1 Os três recursos</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Recurso</strong></th>
+<th><strong>O que representa</strong></th>
+<th><strong>Fórmula</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PV (pontos de vida)</td>
+<td>Capacidade de continuar em combate e suportar danos</td>
+<td>25 no nível 1, mais 5 por nível (20 + 5 × nível)</td>
+</tr>
+<tr class="even">
+<td>PE (pontos de energia)</td>
+<td>Energia para usar seus poderes</td>
+<td>5 no nível 1, mais 2 por nível (3 + 2 × nível)</td>
+</tr>
+<tr class="odd">
+<td>SAN (sanidade)</td>
+<td>Estabilidade mental</td>
+<td>40 (50 para a filha de Hades)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Seus recursos <strong>nunca ultrapassam o máximo</strong>. PV e PE sobem junto com o nível (veja o capítulo 7). A SAN não sobe com o nível.</p>
+<h2>6.2 Sanidade</h2>
+<p>Cenas perturbadoras tiram SAN. Quando isso acontecer, você pode fazer um <strong>teste de Mente</strong>: d20 + PRE + bônus de NEX contra DT 15. Se passar, perde só metade.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Fonte</strong></th>
+<th><strong>Perda de SAN</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cena perturbadora leve</td>
+<td>1 a 3</td>
+</tr>
+<tr class="even">
+<td>Cena perturbadora moderada (espíritos, Outro Lado)</td>
+<td>4 a 6</td>
+</tr>
+<tr class="odd">
+<td>Cena grave (perda de um aliado, eventos extremos)</td>
+<td>7 a 10</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><p><strong>Abalado</strong> (SAN em 50% ou menos): -1 em PRE e INT.</p></li>
+<li><p><strong>Perturbado</strong> (SAN em 25% ou menos): -2 em PRE e INT, e visões.</p></li>
+<li><p><strong>Colapso</strong> (SAN em 0): você perde o controle até o fim da cena.</p></li>
+<li><p><strong>Recuperação:</strong> Ambrosia (+5), uma boa conversa com um aliado (+2, no máximo uma vez por sessão) e o fim de cada arco da história.</p></li>
+</ul>
+<h2>6.3 NEX: exposição ao Outro Lado</h2>
+<p>O NEX existe <strong>apenas para personagens de jogadores</strong>. Vai de 0 a 99%, em passos de 5%. Ele <strong>não</strong> dá PV, PE nem poderes de linhagem. Ele muda como o personagem lida com o Outro Lado. Todo personagem começa com NEX 0% e ganha <strong>+5% no fim de cada sessão</strong>.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Faixa de NEX</strong></th>
+<th><strong>Bônus em testes de Mente</strong></th>
+<th><strong>Perda de SAN por fontes do Outro Lado</strong></th>
+<th><strong>Aptidões</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0 a 24%</td>
+<td>+0</td>
+<td>Normal</td>
+<td>Nenhuma</td>
+</tr>
+<tr class="even">
+<td>25 a 49%</td>
+<td>+1</td>
+<td>-1 (mínimo 1)</td>
+<td>Nenhuma</td>
+</tr>
+<tr class="odd">
+<td>50 a 74%</td>
+<td>+2</td>
+<td>-1 (mínimo 1)</td>
+<td>1 aptidão</td>
+</tr>
+<tr class="even">
+<td>75 a 99%</td>
+<td>+3</td>
+<td>-2 (mínimo 1)</td>
+<td>2 aptidões</td>
+</tr>
+</tbody>
+</table></div>
+<p>Depois de um evento grave, a mestra pode pedir um teste de Mente DT 15. Se você falhar, perde 2 de SAN pelo preço da exposição.</p>
+<h3>Aptidões do Outro Lado</h3>
+<p>Cada aptidão pode ser usada <strong>uma vez por sessão</strong>, sem custo de PE.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Aptidão</strong></th>
+<th><strong>Efeito</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sentir o Outro Lado</td>
+<td>Percebe criaturas e portais em um raio de 20 m</td>
+</tr>
+<tr class="even">
+<td>Mente Fria</td>
+<td>Relança um teste de Mente</td>
+</tr>
+<tr class="odd">
+<td>Olho Aberto</td>
+<td>Enxerga através de ilusões</td>
+</tr>
+<tr class="even">
+<td>Cicatriz Resistente</td>
+<td>Reduz em 3 um dano mental ou sombrio</td>
+</tr>
+</tbody>
+</table></div>
+</article><article class="cap" data-cap="6" hidden><h2>7. Níveis 1 a 7</h2>
+<p>Seu personagem evolui do <strong>nível 1 ao nível 7</strong>. A mestra conduz a evolução no ritmo das sessões, e não apenas pela quantidade de inimigos derrotados. Alguns personagens podem começar em um nível acima do 1, e a mestra avisa na criação.</p>
+<h2>7.1 Tabela de níveis</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Nível</strong></th>
+<th><strong>PV</strong></th>
+<th><strong>PE</strong></th>
+<th><strong>Perícias treinadas</strong></th>
+<th><strong>Aprimoramentos</strong></th>
+<th><strong>O que o personagem ganha</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>25</td>
+<td>5</td>
+<td>3</td>
+<td>0</td>
+<td>Poder inicial (1 entre 2) e ficha inicial</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>30</td>
+<td>7</td>
+<td>5</td>
+<td>0</td>
+<td>Aprimorar treinamento ou habilidade</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>35</td>
+<td>9</td>
+<td>7</td>
+<td>0</td>
+<td>Poder intermediário (1 entre 2) e melhoria de habilidade</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>40</td>
+<td>11</td>
+<td>9 (máximo)</td>
+<td>0</td>
+<td>Melhoria de atributo</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>45</td>
+<td>13</td>
+<td>9</td>
+<td>2</td>
+<td>Poder essencial</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>50</td>
+<td>15</td>
+<td>9</td>
+<td>4</td>
+<td>Aprimorar um poder ou habilidade</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>55</td>
+<td>17</td>
+<td>9</td>
+<td>6</td>
+<td>Evolução especial da linhagem</td>
+</tr>
+</tbody>
+</table></div>
+<h2>7.2 Como ler a tabela</h2>
+<ul>
+<li><p><strong>PV:</strong> começa em 25 e sobe <strong>5 por nível</strong>.</p></li>
+<li><p><strong>PE:</strong> começa em 5 e sobe <strong>2 por nível</strong>.</p></li>
+<li><p><strong>Perícias:</strong> começam em 3 e sobem <strong>2 por nível</strong> até o nível 4, onde chegam ao máximo de 9. Dos níveis 5 ao 7, você ganha <strong>2 aprimoramentos por nível</strong>: Treinado vira Veterano (+10) e Veterano vira Expert (+15).</p></li>
+<li><p><strong>Aprimorar treinamento ou habilidade (níveis 2 e 3):</strong> você escolhe, junto com a mestra, uma melhoria para uma habilidade ou treino do personagem. Os graus de perícia (Veterano e Expert) só começam no nível 5.</p></li>
+<li><p><strong>Melhoria de atributo (nível 4):</strong> +1 em um atributo à sua escolha. O valor de um atributo não passa de +5.</p></li>
+<li><p><strong>Aprimorar um poder (nível 6):</strong> você e a mestra definem uma melhoria para um poder que você já tem, como mais alcance, mais precisão ou um efeito adicional.</p></li>
+<li><p><strong>Evolução especial (nível 7):</strong> cada linhagem tem uma evolução própria. A mestra apresenta quando esse momento chegar.</p></li>
+</ul>
+<h2>7.3 Seus poderes por nível</h2>
+<p>Cada linhagem tem <strong>cinco poderes</strong>: dois iniciais, dois intermediários e um essencial. Você não tem todos de uma vez. Você escolhe <strong>um poder de cada categoria</strong> quando chega ao nível dela.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Quantos existem</strong></th>
+<th><strong>Você recebe</strong></th>
+<th><strong>A partir do nível</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial</td>
+<td>2</td>
+<td>Escolhe 1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Intermediário</td>
+<td>2</td>
+<td>Escolhe 1</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>1</td>
+<td>Recebe o poder</td>
+<td>5</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Atenção:</strong> o poder que você não escolheu fica de fora. Pense bem antes de decidir, e converse com a mestra se tiver dúvida sobre como um poder funciona.</p>
+</blockquote>
+<p>Seus atributos e perícias continuam valendo quando sobe de nível. Ao subir de nível, atualize PV, PE e perícias na sua ficha.</p>
+</article><article class="cap" data-cap="7" hidden><h2>8. Combate</h2>
+<p>O combate é por turnos. Ele considera suas ações, as capacidades dos adversários e as condições do cenário.</p>
+<h2>8.1 Iniciativa e ações</h2>
+<ul>
+<li><p><strong>Iniciativa:</strong> d20 + AGI. Age primeiro quem tiver o maior resultado. Em empate, vence quem tiver maior AGI. Se ainda empatar, role de novo.</p></li>
+<li><p><strong>Ações por turno:</strong> uma <strong>ação de movimento</strong> e uma <strong>ação de ataque</strong>.</p></li>
+<li><p><strong>Movimento:</strong> cerca de 9 metros por ação de movimento.</p></li>
+<li><p><strong>Poderes:</strong> usam a ação de ataque, a não ser que a descrição do poder diga outra coisa.</p></li>
+</ul>
+<h2>8.2 Ataque, Defesa e esquiva</h2>
+<ul>
+<li><p><strong>Ataque:</strong> d20 + FOR (corpo a corpo) ou d20 + AGI (à distância) contra a Defesa do alvo.</p></li>
+<li><p><strong>Defesa:</strong> 10 + AGI + bônus aplicáveis.</p></li>
+<li><p><strong>Esquiva:</strong> é uma reação, <strong>uma por rodada</strong>. Role d20 + AGI. Se superar o total do ataque, você evita o golpe. A esquiva não se soma à Defesa.</p></li>
+<li><p><strong>Dano:</strong> dado da arma + atributo + bônus do item.</p></li>
+</ul>
+<h2>8.3 Armas e armaduras</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Item</strong></th>
+<th><strong>Efeito</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Arma leve</td>
+<td>1d6 + atributo</td>
+</tr>
+<tr class="even">
+<td>Arma média</td>
+<td>1d8 + atributo</td>
+</tr>
+<tr class="odd">
+<td>Arma pesada</td>
+<td>1d10 + atributo</td>
+</tr>
+<tr class="even">
+<td>Arco ou arremesso</td>
+<td>1d8 + AGI</td>
+</tr>
+<tr class="odd">
+<td>Armadura leve</td>
+<td>Reduz 1 de dano</td>
+</tr>
+<tr class="even">
+<td>Armadura média</td>
+<td>Reduz 2 de dano</td>
+</tr>
+<tr class="odd">
+<td>Armadura pesada</td>
+<td>Reduz 3 de dano e -1 em AGI</td>
+</tr>
+<tr class="even">
+<td>Escudo</td>
+<td>Bônus de Defesa conforme o item</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cada personagem usa <strong>1 arma principal, 1 armadura, 1 escudo ou foco e até 2 acessórios</strong>.</p>
+<h2>8.4 Condições</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Condição</strong></th>
+<th><strong>Efeito</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Atordoado</td>
+<td>Perde a ação de ataque na próxima rodada</td>
+</tr>
+<tr class="even">
+<td>Caído</td>
+<td>-2 para atacar e Defesa -2 contra corpo a corpo. Levantar gasta o movimento</td>
+</tr>
+<tr class="odd">
+<td>Agarrado</td>
+<td>Não se move e sofre -2 em ataques</td>
+</tr>
+<tr class="even">
+<td>Cego</td>
+<td>-4 em ataques e testes que dependem de visão</td>
+</tr>
+<tr class="odd">
+<td>Em chamas</td>
+<td>1d6 de dano por rodada até apagar (ação de movimento)</td>
+</tr>
+<tr class="even">
+<td>Sangrando</td>
+<td>1d4 por rodada até receber cuidados (DT 15)</td>
+</tr>
+<tr class="odd">
+<td>Assustado</td>
+<td>-2 em tudo e não avança em direção à fonte do medo</td>
+</tr>
+<tr class="even">
+<td>Lento</td>
+<td>Movimento pela metade</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cada condição segue a própria descrição. Duração e efeitos não se misturam entre condições diferentes.</p>
+<h2>8.5 Ferimentos</h2>
+<p>Sempre que um único golpe tirar <strong>metade do seu PV máximo ou mais</strong>, a mestra rola 1d6 para determinar um ferimento:</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>d6</strong></th>
+<th><strong>Ferimento</strong></th>
+<th><strong>Efeito até o tratamento</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Braço ferido</td>
+<td>-2 em ataques e testes de FOR</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Perna ferida</td>
+<td>Movimento pela metade</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Costelas</td>
+<td>-2 em VIG e perde 1 PE por rodada de esforço</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Cabeça atingida</td>
+<td>-2 em INT e PRE</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Corte profundo</td>
+<td>Sangrando</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Cicatriz</td>
+<td>Sem efeito mecânico. Rende uma cena de roleplay</td>
+</tr>
+</tbody>
+</table></div>
+<p>O Bálsamo de Ares (+5 PV) e um descanso longo removem o efeito.</p>
+<h2>8.6 Incapacitação, morte e recuperação</h2>
+<p>Com <strong>2 PV ou menos</strong>, o personagem fica <strong>Incapacitado</strong>: só consegue se mover ou falar.</p>
+<p>Morte e recuperação são recursos de roleplay entre a mestra e os jogadores. Se o seu personagem chegar a <strong>0 PV</strong>, a cena decide, e a mestra oferece três saídas:</p>
+<ul>
+<li><p><strong>Resgate:</strong> um aliado estabiliza o personagem (teste DT 15) ou usa Ambrosia.</p></li>
+<li><p><strong>Sacrifício:</strong> você escolhe um custo.</p></li>
+<li><p><strong>Ferimento permanente:</strong> o personagem sobrevive com uma sequela.</p></li>
+</ul>
+<blockquote>
+<p><strong>A morte de um personagem de jogador só acontece com o seu consentimento.</strong></p>
+</blockquote>
+</article><article class="cap" data-cap="8" hidden><h2>9. Poderes</h2>
+<p>Poderes são manifestações sobrenaturais ligadas ao seu deus. Para usar um poder, você gasta PE e a ação de ataque do seu turno.</p>
+<h2>9.1 Custo, duração e recarga</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Custo</strong></th>
+<th><strong>Duração</strong></th>
+<th><strong>Recarga (depois que o efeito termina)</strong></th>
+<th><strong>DT de referência</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial</td>
+<td>2 PE</td>
+<td>1 rodada</td>
+<td>1 rodada completa</td>
+<td>15</td>
+</tr>
+<tr class="even">
+<td>Intermediário</td>
+<td>4 PE</td>
+<td>1 rodada</td>
+<td>2 rodadas completas</td>
+<td>20</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>6 PE</td>
+<td>2 rodadas</td>
+<td>3 rodadas completas</td>
+<td>25</td>
+</tr>
+</tbody>
+</table></div>
+<p>A recarga <strong>começa quando o efeito termina</strong>, e não quando você ativa o poder. Só há exceção se o próprio poder disser.</p>
+<h2>9.2 Efeitos padrão</h2>
+<p>Poderes sem valores próprios usam esta tabela:</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Dano</strong></th>
+<th><strong>Utilidade</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial</td>
+<td>2d6</td>
+<td>+2 em um teste ou efeito simples</td>
+</tr>
+<tr class="even">
+<td>Intermediário</td>
+<td>4d6</td>
+<td>+4 ou efeito em área pequena</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>6d6 em área</td>
+<td>Efeito de campo por 2 rodadas</td>
+</tr>
+</tbody>
+</table></div>
+<h2>9.3 Limites dos poderes</h2>
+<p>A mestra define os limites de cada poder durante as sessões, conforme as situações. Depois de definidos, os limites são aplicados de forma consistente: um poder não vai ter efeitos muito diferentes em situações equivalentes sem uma justificativa na história. Se você tiver uma ideia criativa para usar seu poder, proponha, e a mestra avalia.</p>
+<h2>9.4 Resumo: quando você tem o quê</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Nível</strong></th>
+<th><strong>Poder disponível</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 e 2</td>
+<td>O poder inicial que você escolheu</td>
+</tr>
+<tr class="even">
+<td>3 e 4</td>
+<td>O poder inicial e o poder intermediário que você escolheu</td>
+</tr>
+<tr class="odd">
+<td>5, 6 e 7</td>
+<td>O poder inicial, o poder intermediário e o poder essencial</td>
+</tr>
+</tbody>
+</table></div>
+</article><article class="cap" data-cap="9" hidden><h2>10. Poderes por linhagem</h2>
+<p>Cada linhagem oferece dois poderes iniciais (você escolhe um), dois intermediários (você escolhe um) e um essencial. Os custos, durações e recargas estão no capítulo 9. Os valores de dano e bônus sem número específico seguem o item 9.2.</p>
+<h2>10.1 Poseidon</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Poder</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>O que faz</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial (escolha 1)</td>
+<td>Afinidade Aquática</td>
+<td>1</td>
+<td>Afinidade natural com a água. Respira debaixo d'água, move-se com facilidade em ambientes aquáticos e percebe movimentos próximos na água. A respiração subaquática é uma característica natural da linhagem, e esta opção representa o desenvolvimento dessa afinidade.</td>
+</tr>
+<tr class="even">
+<td>Inicial (escolha 1)</td>
+<td>Manipulação das Águas</td>
+<td>1</td>
+<td>Controla pequenas quantidades de água, altera seu fluxo e direciona jatos ou movimentos simples.</td>
+</tr>
+<tr class="odd">
+<td>Intermediário (escolha 1)</td>
+<td>Correnteza Dominante</td>
+<td>3</td>
+<td>Controla volumes maiores de água, criando correntes que empurram inimigos, dificultam movimentos ou formam uma defesa.</td>
+</tr>
+<tr class="even">
+<td>Intermediário (escolha 1)</td>
+<td>Pele das Profundezas</td>
+<td>3</td>
+<td>Uma camada de água protege o semideus e reduz danos físicos, conforme os limites definidos pela mestra.</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>Domínio do Oceano</td>
+<td>5</td>
+<td>Controle poderoso sobre a água próxima e suas correntes, alterando o ambiente aquático de forma significativa. A efetividade depende do ambiente e da quantidade de água disponível.</td>
+</tr>
+</tbody>
+</table></div>
+<h2>10.2 Ares</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Poder</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>O que faz</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial (escolha 1)</td>
+<td>Fúria de Guerra</td>
+<td>1</td>
+<td>Por 1 rodada, ganha +2 em ataques corpo a corpo e não recua diante de inimigos maiores.</td>
+</tr>
+<tr class="even">
+<td>Inicial (escolha 1)</td>
+<td>Instinto de Batalha</td>
+<td>1</td>
+<td>Percebe ameaças, emboscadas e a intenção hostil de inimigos próximos, mesmo no escuro ou fora de vista.</td>
+</tr>
+<tr class="odd">
+<td>Intermediário (escolha 1)</td>
+<td>Voz de Comando</td>
+<td>3</td>
+<td>Com um brado de comando, ajuda aliados a recuperar a coragem ou reduzir o desgaste. Remove Assustado e pode devolver um pouco de SAN ou PE, conforme as regras do efeito.</td>
+</tr>
+<tr class="even">
+<td>Intermediário (escolha 1)</td>
+<td>Desafio do Guerreiro</td>
+<td>3</td>
+<td>Marca um alvo e o obriga a encarar o semideus, melhorando a capacidade de acertá-lo em combate corpo a corpo e de impedir sua fuga.</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>Herança da Guerra</td>
+<td>5</td>
+<td>Manifestação intensa da fúria de Ares: uma onda de força e energia vermelha atinge uma área ampla e lança uma onda de choque contra os adversários.</td>
+</tr>
+</tbody>
+</table></div>
+<h2>10.3 Hades</h2>
+<p>A filha de Hades tem <strong>SAN máxima 50</strong>, em vez de 40.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Poder</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>O que faz</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial (escolha 1)</td>
+<td>Visão do Submundo</td>
+<td>1</td>
+<td>Percebe presenças sobrenaturais ligadas à morte ou à energia espiritual.</td>
+</tr>
+<tr class="even">
+<td>Inicial (escolha 1)</td>
+<td>Manto das Sombras</td>
+<td>1</td>
+<td>Envolve o corpo em sombras e dificulta a percepção em ambientes escuros. Não dá invisibilidade absoluta.</td>
+</tr>
+<tr class="odd">
+<td>Intermediário (escolha 1)</td>
+<td>Exército das Sombras</td>
+<td>3</td>
+<td>Invoca dez sombras humanoides semitranslúcidas que atacam os alvos. Cada sombra que acerta causa 1d8. O resultado total do teste define quantas acertam (tabela abaixo). Duração de uma rodada.</td>
+</tr>
+<tr class="even">
+<td>Intermediário (escolha 1)</td>
+<td>Passagem Sombria</td>
+<td>3</td>
+<td>Desloca-se rapidamente entre áreas de sombra visíveis, conforme os limites da mestra.</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>Autoridade do Submundo</td>
+<td>5</td>
+<td>Manifesta energia sombria para intimidar inimigos e controlar o espaço próximo. Não dá controle absoluto sobre os mortos.</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Tabela do Exército das Sombras</h3>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Resultado total do teste</strong></th>
+<th><strong>Sombras que acertam</strong></th>
+<th><strong>Dano</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>28 a 30</td>
+<td>10</td>
+<td>10d8</td>
+</tr>
+<tr class="even">
+<td>25 a 27</td>
+<td>7</td>
+<td>7d8</td>
+</tr>
+<tr class="odd">
+<td>22 a 24</td>
+<td>5</td>
+<td>5d8</td>
+</tr>
+<tr class="even">
+<td>21 ou menos</td>
+<td>3</td>
+<td>3d8</td>
+</tr>
+</tbody>
+</table></div>
+<p>Médias aproximadas: 10d8 = 45, 7d8 = 31,5, 5d8 = 22,5 e 3d8 = 13,5. É o poder mais forte do jogo e exige resultados de 21 a 30 no teste. O custo e a recarga seguem as regras dos poderes intermediários.</p>
+<h2>10.4 Hermes</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Poder</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>O que faz</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial (escolha 1)</td>
+<td>Passos Ligeiros</td>
+<td>1</td>
+<td>Desloca-se rápido e supera obstáculos simples com facilidade.</td>
+</tr>
+<tr class="even">
+<td>Inicial (escolha 1)</td>
+<td>Mãos Habilidosas</td>
+<td>1</td>
+<td>Favorece o manuseio de objetos, mecanismos simples e fechaduras, conforme as limitações da mestra.</td>
+</tr>
+<tr class="odd">
+<td>Intermediário (escolha 1)</td>
+<td>Reflexos do Mensageiro</td>
+<td>3</td>
+<td>Reage rapidamente a perigos e se reposiciona diante de ameaças.</td>
+</tr>
+<tr class="even">
+<td>Intermediário (escolha 1)</td>
+<td>Desaparecimento Oportuno</td>
+<td>3</td>
+<td>Aproveita distrações e pontos cegos para sair do campo de visão de um adversário ou mudar de posição. Pode criar uma distração que ajuda o grupo em uma fuga ou infiltração.</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>Domínio das Rotas</td>
+<td>5</td>
+<td>Intuição sobrenatural sobre caminhos, passagens escondidas e rotas de fuga.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Bênção de Hermes:</strong> uma vez por sessão, a filha de Hermes <strong>relança um teste</strong>.</p>
+<h2>10.5 Atena</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Categoria</strong></th>
+<th><strong>Poder</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>O que faz</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicial (escolha 1)</td>
+<td>Olhar Estratégico</td>
+<td>1</td>
+<td>Identifica um ponto fraco ou um padrão. Aliados ganham +2 contra o alvo marcado, ou o grupo ganha +2 em um teste de investigação.</td>
+</tr>
+<tr class="even">
+<td>Inicial (escolha 1)</td>
+<td>Escudo de Égide</td>
+<td>1</td>
+<td>Reação que reduz em 4 o dano que um aliado receberia.</td>
+</tr>
+<tr class="odd">
+<td>Intermediário (escolha 1)</td>
+<td>Plano Infalível</td>
+<td>3</td>
+<td>Por 1 rodada, aliados em vista ganham +2 em testes e agem na ordem que o personagem escolher.</td>
+</tr>
+<tr class="even">
+<td>Intermediário (escolha 1)</td>
+<td>Coruja Vigilante</td>
+<td>3</td>
+<td>Evita emboscadas e uma surpresa. Pode fazer uma pergunta sobre a cena e receber uma resposta verdadeira.</td>
+</tr>
+<tr class="odd">
+<td>Essencial</td>
+<td>Estratégia Suprema</td>
+<td>5</td>
+<td>Por 2 rodadas, aliados em vista ganham +3 em testes e +2 de Defesa, e o personagem reordena a ação de um aliado por rodada.</td>
+</tr>
+</tbody>
+</table></div>
+</article><article class="cap" data-cap="10" hidden><h2>11. Equipamentos e itens</h2>
+<p>Os equipamentos podem ser dados pelo Acampamento, por personagens da história ou como parte de uma missão. Você também pode encontrá-los ao explorar, investigar, lutar ou interagir com o ambiente. Equipamentos comuns, como kit de arrombamento, lanterna e corda, são narrativos e <strong>não precisam constar na ficha</strong>.</p>
+<h2>11.1 Raridade dos itens</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Raridade</strong></th>
+<th><strong>Bônus</strong></th>
+<th><strong>Propriedade</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mítica</td>
+<td>+4 ou +2d6</td>
+<td>Muda a cena. Custa 6 PE, tem recarga de 3 rodadas e traz um Preço</td>
+</tr>
+<tr class="even">
+<td>Lendária</td>
+<td>+3</td>
+<td>Efeito forte. Custa 4 PE</td>
+</tr>
+<tr class="odd">
+<td>Épica</td>
+<td>+2</td>
+<td>Uma propriedade. 2 PE opcional</td>
+</tr>
+<tr class="even">
+<td>Rara</td>
+<td>+1</td>
+<td>Uma propriedade menor, sem custo</td>
+</tr>
+<tr class="odd">
+<td>Normal</td>
+<td>+0</td>
+<td>Nenhuma</td>
+</tr>
+</tbody>
+</table></div>
+<h2>11.2 Regras de uso</h2>
+<ul>
+<li><p>Dano = dado do item + atributo + bônus.</p></li>
+<li><p>Cada personagem usa 1 arma principal, 1 armadura, 1 escudo ou foco e até 2 acessórios.</p></li>
+<li><p>Itens marcados com uma linhagem só funcionam para os filhos daquele deus. Quem não é da linhagem recebe só o bônus numérico, sem a propriedade.</p></li>
+<li><p>Itens Míticos: no máximo 1 por personagem. O Preço é narrativo.</p></li>
+<li><p>Armas de bronze sagrado e de materiais divinos ferem monstros normalmente. Armas mortais comuns causam metade do dano, salvo se o item disser o contrário.</p></li>
+<li><p>Itens Lendários e Míticos não são vendidos.</p></li>
+</ul>
+<blockquote>
+<p>O <strong>almanaque completo de armas, armaduras e acessórios</strong> está no site do jogador, na aba <strong>Itens</strong>, junto com o bestiário e os mapas.</p>
+</blockquote>
+<h2>11.3 Consumíveis</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Consumível</strong></th>
+<th><strong>Efeito</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ambrosia</td>
+<td>+10 PV, +10 PE e +5 SAN por unidade</td>
+</tr>
+<tr class="even">
+<td>Bálsamo de Ares</td>
+<td>+5 PV</td>
+</tr>
+</tbody>
+</table></div>
+</article><article class="cap" data-cap="11" hidden><h2>12. Descanso, dinheiro e viagens</h2>
+<h2>12.1 Recuperação e descanso</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Recurso ou situação</strong></th>
+<th><strong>Recuperação</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ambrosia</td>
+<td>+10 PV, +10 PE e +5 SAN por unidade</td>
+</tr>
+<tr class="even">
+<td>Bálsamo de Ares</td>
+<td>+5 PV</td>
+</tr>
+<tr class="odd">
+<td>Sono de pelo menos 2 horas</td>
+<td>+5 PE</td>
+</tr>
+</tbody>
+</table></div>
+<p>Nada recupera além do máximo. Alimentação e descanso acontecem entre as missões e podem ser resumidos ou jogados em cenas de roleplay.</p>
+<h2>12.2 Moedas e preços</h2>
+<p>A campanha usa <strong>dólares</strong> e <strong>dracmas</strong>. Um dracma vale cerca de 10 dólares. Todo campista começa com <strong>10 dracmas e 50 dólares</strong>. Não há penalidade extra por falta de dinheiro: o personagem só não usufrui do que depende dele.</p>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Item ou serviço</strong></th>
+<th><strong>Preço</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Táxi grego (corrida normal)</td>
+<td>2 dracmas</td>
+</tr>
+<tr class="even">
+<td>Táxi grego (urgência)</td>
+<td>4 dracmas</td>
+</tr>
+<tr class="odd">
+<td>Refeição no mundo mortal</td>
+<td>10 dólares</td>
+</tr>
+<tr class="even">
+<td>Passagem de transporte público</td>
+<td>5 dólares</td>
+</tr>
+<tr class="odd">
+<td>Arma ou armadura Normal</td>
+<td>3 dracmas</td>
+</tr>
+<tr class="even">
+<td>Item Raro</td>
+<td>10 dracmas</td>
+</tr>
+<tr class="odd">
+<td>Item Épico</td>
+<td>30 dracmas</td>
+</tr>
+<tr class="even">
+<td>Itens Lendários e Míticos</td>
+<td>Não são vendidos</td>
+</tr>
+</tbody>
+</table></div>
+<h2>12.3 Deslocamento</h2>
+<ul>
+<li><p><strong>A pé:</strong> quando as circunstâncias permitem. A mestra narra ou resume a viagem.</p></li>
+<li><p><strong>Táxi grego:</strong> pago em dracmas, conforme a disponibilidade e as circunstâncias.</p></li>
+<li><p><strong>Portais:</strong> ligam o Mundo Atual ao Mundo Antigo e ao Outro Lado, e podem estar abertos, parcialmente abertos ou fechados.</p></li>
+</ul>
+</article><article class="cap" data-cap="12" hidden><h2>13. Como montar sua ficha</h2>
+<p>Cada jogador monta a própria ficha seguindo os passos abaixo e envia para a mestra, que publica as fichas no site de fichas da campanha. Você não precisa de ficha em papel, mas pode usar uma para as sessões.</p>
+<h2>13.1 Passo a passo</h2>
+<ol type="1">
+<li><p><strong>Conceito:</strong> nome, idade, aparência e uma frase que resuma quem é seu personagem.</p></li>
+<li><p><strong>Linhagem:</strong> escolha o deus ou a deusa do seu personagem entre as linhagens do capítulo 10 que a mestra liberou para a sua mesa.</p></li>
+<li><p><strong>Nível inicial:</strong> a mestra informa com qual nível você começa. A maioria dos personagens começa no nível 1.</p></li>
+<li><p><strong>Atributos:</strong> distribua os valores <strong>+3, +2, +1, +1 e 0</strong> entre AGI, FOR, INT, PRE e VIG. A mestra pode ajustar conforme o conceito.</p></li>
+<li><p><strong>Recursos:</strong> anote PV, PE e SAN do seu nível (capítulos 6 e 7). Anote também o NEX inicial de 0%.</p></li>
+<li><p><strong>Perícias:</strong> escolha as perícias treinadas do seu nível (capítulo 5). No nível 1, são 3. Se você começa em nível 5 ou mais, aplique também os aprimoramentos a que tem direito.</p></li>
+<li><p><strong>Poderes:</strong> escolha um poder inicial. Se você começa em nível mais alto, escolha também os poderes a que tem direito (capítulo 7.3).</p></li>
+<li><p><strong>Traço:</strong> escreva seu Traço de origem, de +2 em uma situação específica (capítulo 4.3).</p></li>
+<li><p><strong>História:</strong> origem, família, motivação e o que seu personagem quer. Escreva também o que seu personagem <strong>não</strong> sabe ou teme, porque isso rende boas cenas.</p></li>
+<li><p><strong>Equipamento e dinheiro:</strong> anote 10 dracmas e 50 dólares. Itens de arma e armadura são entregues pela mestra durante a campanha.</p></li>
+</ol>
+<h2>13.2 O que enviar</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Campo</strong></th>
+<th><strong>O que escrever</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Nome, idade e linhagem</td>
+<td>Como o personagem se chama, quantos anos tem e de qual deus é filho ou filha</td>
+</tr>
+<tr class="even">
+<td>Aparência</td>
+<td>Cabelo, olhos, estilo de roupa, marcas e acessórios. Se tiver imagem de referência, envie junto</td>
+</tr>
+<tr class="odd">
+<td>Origem e história</td>
+<td>De onde veio, com quem cresceu e como chegou até aqui</td>
+</tr>
+<tr class="even">
+<td>Motivação</td>
+<td>O que move o personagem</td>
+</tr>
+<tr class="odd">
+<td>Personalidade</td>
+<td>Como age, o que gosta e o que o incomoda</td>
+</tr>
+<tr class="even">
+<td>Atributos</td>
+<td>Os cinco valores de AGI, FOR, INT, PRE e VIG</td>
+</tr>
+<tr class="odd">
+<td>PV, PE, SAN e NEX</td>
+<td>Máximos do seu nível</td>
+</tr>
+<tr class="even">
+<td>Perícias</td>
+<td>A lista de perícias, com o grau de cada uma (Treinado, Veterano ou Expert)</td>
+</tr>
+<tr class="odd">
+<td>Poder(es)</td>
+<td>O poder escolhido de cada categoria a que você já tem acesso</td>
+</tr>
+<tr class="even">
+<td>Traço</td>
+<td>O bônus de +2 e em que situação vale</td>
+</tr>
+<tr class="odd">
+<td>Equipamento</td>
+<td>10 dracmas, 50 dólares e itens comuns narrativos</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Segredos do seu personagem podem ficar de fora da ficha pública. Combine com a mestra o que aparece no site e o que você prefere contar em particular.</p>
+</blockquote>
+</article><article class="cap" data-cap="13" hidden><h2>14. Convivência na mesa</h2>
+<p>Este jogo pode tratar de temas pesados, como luto, perda, medo e conflito entre amigos. Para que todo mundo se divirta com tranquilidade:</p>
+<ul>
+<li><p><strong>Sinal de pausa:</strong> o grupo combina um sinal (uma palavra, um gesto ou uma carta). Quem usar o sinal pausa a cena sem precisar explicar. A cena muda de rumo ou pula.</p></li>
+<li><p><strong>Conversa antes e depois:</strong> a mestra pode conversar em particular com cada jogador antes da campanha e depois de cenas intensas. Você pode pedir mudanças sem ser julgado.</p></li>
+<li><p><strong>Consentimento:</strong> a morte do seu personagem só acontece com o seu consentimento. Você também escolhe como seu personagem reage a perdas.</p></li>
+<li><p><strong>Respeite o ritmo dos outros:</strong> cada personagem descobre as coisas no seu tempo. Evite contar segredos que só o seu personagem sabe, a não ser que ele os conte dentro da história.</p></li>
+<li><p><strong>Conflitos entre personagens</strong> são parte do jogo. Conflitos entre jogadores, não. Se algo incomodar de verdade, avise a mestra.</p></li>
+</ul>
+</article><article class="cap" data-cap="14" hidden><h2>15. Resumo de uma página</h2>
+<div class="rol"><table>
+
+<thead>
+<tr class="header">
+<th><strong>Assunto</strong></th>
+<th><strong>Regra</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Teste</td>
+<td>d20 + atributo + bônus contra a DT (10 fácil, 15 moderada, 20 difícil, 25 muito difícil, 30 extrema)</td>
+</tr>
+<tr class="even">
+<td>Bônus e penalidades</td>
+<td>+2 para plano ou circunstância favorável, -2 para situação ruim</td>
+</tr>
+<tr class="odd">
+<td>Perícias</td>
+<td>Treinado +5, Veterano +10, Expert +15. 3 perícias no nível 1, +2 por nível até 9 (nível 4). Níveis 5 a 7: +2 aprimoramentos por nível</td>
+</tr>
+<tr class="even">
+<td>Traço</td>
+<td>+2 em uma situação específica, à vontade</td>
+</tr>
+<tr class="odd">
+<td>PV</td>
+<td>25 no nível 1 e +5 por nível</td>
+</tr>
+<tr class="even">
+<td>PE</td>
+<td>5 no nível 1 e +2 por nível</td>
+</tr>
+<tr class="odd">
+<td>SAN</td>
+<td>40 (50 para a filha de Hades). Perde com cenas perturbadoras</td>
+</tr>
+<tr class="even">
+<td>NEX</td>
+<td>Começa em 0%, +5% por sessão. Muda os testes de Mente e a perda de SAN</td>
+</tr>
+<tr class="odd">
+<td>Iniciativa</td>
+<td>d20 + AGI</td>
+</tr>
+<tr class="even">
+<td>Turno</td>
+<td>1 ação de movimento (cerca de 9 m) e 1 ação de ataque</td>
+</tr>
+<tr class="odd">
+<td>Ataque</td>
+<td>d20 + FOR (corpo a corpo) ou AGI (distância) contra a Defesa</td>
+</tr>
+<tr class="even">
+<td>Defesa</td>
+<td>10 + AGI + bônus</td>
+</tr>
+<tr class="odd">
+<td>Esquiva</td>
+<td>Reação, 1 por rodada: d20 + AGI contra o ataque</td>
+</tr>
+<tr class="even">
+<td>Dano</td>
+<td>Dado da arma + atributo + bônus do item</td>
+</tr>
+<tr class="odd">
+<td>Poder inicial</td>
+<td>2 PE, 1 rodada, recarga de 1 rodada, nível 1</td>
+</tr>
+<tr class="even">
+<td>Poder intermediário</td>
+<td>4 PE, 1 rodada, recarga de 2 rodadas, nível 3</td>
+</tr>
+<tr class="odd">
+<td>Poder essencial</td>
+<td>6 PE, 2 rodadas, recarga de 3 rodadas, nível 5</td>
+</tr>
+<tr class="even">
+<td>Incapacitado</td>
+<td>2 PV ou menos: só se move e fala</td>
+</tr>
+<tr class="odd">
+<td>0 PV</td>
+<td>Resgate, sacrifício ou ferimento permanente. Morte só com o seu consentimento</td>
+</tr>
+<tr class="even">
+<td>Dinheiro inicial</td>
+<td>10 dracmas e 50 dólares (1 dracma ≈ 10 dólares)</td>
+</tr>
+<tr class="odd">
+<td>Equipamento</td>
+<td>1 arma, 1 armadura, 1 escudo ou foco e até 2 acessórios</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Fim do Livro do Jogador — O Oráculo Perdido.</strong></p>
+</article>
+   <div class="acoes" style="margin-top:22px"><button class="sec" id="l-ant">← Anterior</button><button class="sec" id="l-prox">Próximo →</button></div>
+  </section>
+ </div>
+ <div id="p-mestra" hidden>
+  <div id="m-cadeado" class="destaque"><h2>Área da Mestra</h2><p>Conteúdo restrito. Digite a senha para abrir os mapas da mestra.</p>
+   <form id="m-form" autocomplete="off"><input id="m-senha" type="password" placeholder="Senha" aria-label="Senha da mestra" autocomplete="off"><button type="submit" id="m-entrar">Entrar</button></form>
+   <p id="m-aviso" role="alert"></p></div>
+  <div id="m-aberto" hidden><div class="acoes"><button class="sec" id="m-trancar" type="button">🔒 Trancar</button></div>
+   <div id="m-abas" role="tablist" aria-label="Seções da área da mestra"></div>
+   <iframe id="m-frame" title="Mapas da Mestra"></iframe>
+   <div id="m-docs" class="livro" hidden><div class="chips" id="md-chips" role="tablist" aria-label="Seções do documento"></div><select id="md-sel" aria-label="Seção do documento"></select><div id="md-corpo"></div><div class="acoes" style="margin-top:22px;justify-content:space-between"><button class="sec" id="md-ant" type="button">← Anterior</button><button class="sec" id="md-prox" type="button">Próximo →</button></div></div></div>
+ </div>
+</main>
+<footer>Ordem Paranormal × Mitologia Grega</footer>
+<script>
+(() => {
+  "use strict";
+  // Mapas de sessões futuras ficam fora desta pasta (estão em "mapas mestra"). Para liberar um, copie o arquivo para mapas/ e troque a entrada "bloq" por ela, com liberado: true.
+  const MAPAS = [
+ { "id": "nova-york", "nome": "Nova York", "sub": "Mundo exterior",
+  "obs": ["Comecem pela entrada do Acampamento: o caminho pela avenida até o Museu leva 2 minutos de interação entre vocês. Conversem e planejem enquanto ele corre.", "Estar no mapa não significa que o personagem conheça o lugar."], "liberado": true },
+ { "id": "delfos", "nome": "Santuário de Delfos", "sub": "Locais sagrados",
+  "obs": ["O grupo chega pelo Portal, e a única trilha daqui leva à Fenda Sombria.", "Áreas de brilho roxo são perigosas: avancem com cuidado."], "liberado": true },
+ { "id": "bloq1", "nome": "Em breve", "sub": "", "obs": [], "liberado": false },
+ { "id": "bloq2", "nome": "Em breve", "sub": "", "obs": [], "liberado": false },
+ { "id": "bloq3", "nome": "Em breve", "sub": "", "obs": [], "liberado": false },
+ { "id": "bloq4", "nome": "Em breve", "sub": "", "obs": [], "liberado": false }
+];
+  const DADOS = {"bes": [{"grupo": "Criaturas menores (NA 1 e 2)", "rows": [["Harpia Corrompida", "1 C", "13", "12", "+4", "1d6+2", "Voo. Desarmar: teste de FOR DT 12 ou perde um item"], ["Lemúria (espectro menor)", "1 C", "13", "12", "+4", "1d6+2", "Atravessa paredes finas. Presença exige teste de Mente (1 de SAN)"], ["Esqueleto de Espartoi", "2 C", "16", "13", "+5", "1d6+3", "Surge em grupos de 4. 1 chance em 6 de se levantar de novo"], ["Estinfálide (ave de bronze)", "2 C", "16", "13", "+5", "1d6+3", "Voo. Penas lançadas (2 × 1d4 à distância). Bando de 3 ou mais"], ["Telquine", "2 C", "16", "13", "+5", "1d6+3", "Veneno marinho: Lento (VIG DT 12). Hábil com ferramentas"], ["Cão do Submundo", "2 P", "30", "13", "+5", "1d8+3", "Rastreia pelo cheiro. Uivo: Assustado (Mente DT 12)"], ["Kere (espírito da morte)", "2 P", "30", "13", "+5", "1d6+3", "Drena 1d4 PE no acerto. Voo"]]}, {"grupo": "Criaturas médias (NA 3 e 4)", "rows": [["Empousa", "3 P", "35", "14", "+6", "1d8+3", "Encanto: Mente DT 15 ou não ataca a Empousa por 1 rodada. Muda de forma"], ["Lâmia", "3 P", "35", "14", "+6", "1d8+3", "Mordida venenosa (Lento). Ilusões simples"], ["Dracaena (mulher-serpente)", "3 P", "35", "14", "+6", "1d8+3", "Cauda: Agarrado (FOR DT 14)"], ["Javali de Erimanto", "3 P", "35", "14", "+6", "1d10+2", "Investida: +1d6 se andar 6 m antes"], ["Escorpião Gigante", "3 P", "35", "14", "+6", "1d8+3", "Veneno: 1d4 por rodada por 3 rodadas (VIG DT 14)"], ["Sereia", "3 P", "35", "14", "+6", "Canto 1d6 mental", "Canto: Mente DT 15 ou Atordoado"], ["Cavalo de Diomedes", "3 P", "35", "14", "+6", "1d10+3", "Carnívoro. Pisoteia alvos Caídos"], ["Esfinge", "4 P", "40", "15", "+7", "1d10+3", "Enigma (INT DT 15): sucesso a faz recuar; falha dá um ataque extra"], ["Touro de Cólquida", "4 P", "40", "15", "+7", "1d10+3", "Sopro de fogo em cone de 6 m (2d6, Em chamas)"], ["Lestrigão", "4 P", "40", "15", "+7", "1d10+4", "Arremessa pedras. Agarra (FOR DT 15)"], ["Minotauro", "4 E", "80", "15", "+7", "2d8+4", "Investida: +2d6 e Caído. Abaixo da metade de PV, +2 em ataque"], ["Ciclope", "4 E", "80", "15", "+7", "2d8+4", "Arremessa rochas (1d10+4, 20 m). Um crítico no olho o deixa Cego"], ["Leão de Nemeia", "4 E", "80", "16", "+7", "2d8+3", "Pele impenetrável: reduz 3 de dano de armas comuns. Itens Raros ou melhores e poderes ignoram"], ["Manticora", "4 E", "80", "15", "+7", "2d8+3", "Espinhos à distância (3 × 1d6, 20 m). Cauda venenosa"]]}, {"grupo": "Criaturas maiores e chefes (NA 5 a 7)", "rows": [["Autômato de Bronze", "5 P", "45", "16", "+8", "2d6+4", "Reduz 3 de dano. Imune a medo. Fogo e eletricidade causam +1d6"], ["Erínia (Fúria)", "5 P", "45", "16", "+8", "2d6+4", "Voo. Açoite: 1d4 de SAN. Perseguidora: ignora cobertura"], ["Górgona", "5 E", "90", "16", "+8", "2d6+4", "Olhar petrificante: AGI DT 18 ou Atordoado por 2 rodadas"], ["Quimera", "5 E", "90", "16", "+8", "2d8+4", "Três ataques (leão, bode, serpente). Sopro de fogo em cone (2d6)"], ["Hidra", "5 E", "90", "16", "+8", "2d6+4", "Ao sofrer 20 de dano em uma rodada, nascem duas cabeças (+1 ataque). Fogo impede"], ["Cérbero", "5 E", "90", "16", "+8", "2d8+4", "Três mordidas. Uivo triplo: Assustado (Mente DT 15)"], ["Cila", "5 E", "90", "16", "+8", "2d6+4", "Seis cabeças: ataca até 3 alvos. Agarra"], ["Píton de Delfos", "6 E", "100", "17", "+9", "2d8+5", "Constrição: Agarrado e 1d8 por rodada. Veneno. Respiração em cone"], ["Gigante Filho de Gaia", "6 E", "100", "17", "+9", "2d10+4", "Pisão: AGI DT 15 ou Caído. Arremessa rochas"], ["Hecatônquiro", "6 B", "200", "17", "+9", "2d8+4", "Cem mãos: 4 ataques por rodada, divididos entre alvos"]]}], "aliados": [["Pégaso", "Montaria alada", "Transporte rápido e cenas de fuga"], ["Hipocampo", "Montaria aquática", "Viagem submarina"], ["Centauro", "Instrutor e arqueiro", "Aliado do Acampamento, como Quíron"], ["Sátiro", "Guia e buscador", "Encontra semideuses e acompanha missões"], ["Ember", "Curandeira, filha de Apolo (nível 5)", "Cura e dá suporte ao grupo nas missões"], ["Ninfa ou dríade", "Curandeira do bosque", "Descanso e cuidados entre missões"], ["Fênix", "Ave de fogo", "Presença rara; símbolo de renascimento"]], "itens": [{"raridade": "Mítica", "rows": [["1", "Coração do Oceano", "Tridente (pesada)", "1d10+4", "Maré Viva (6 PE): onda em área grande, 6d6 e empurra 6 m. Preço: sede intensa (-1 em PRE na cena)", "Poseidon"], ["2", "Lança da Fúria Eterna", "Lança (média)", "1d8+4", "Investida do Deus da Guerra (6 PE): avanço de 6 m com golpe em linha, 6d6 em área e Derruba. Preço: -2 na Defesa por 1 rodada", "Ares"], ["3", "Bidente do Fim", "Lança dupla (média)", "1d8+4", "Chamado do Fim (6 PE): alvos com 25% ou menos de PV ficam Incapacitados e 3 sombras atacam (1d8). Preço: perde 3 de SAN", "Hades"], ["4", "Caduceu de Duas Serpentes", "Bastão (leve)", "1d6+4", "Passagem do Mensageiro (6 PE): leva o usuário e 2 aliados até 30 m, atravessando paredes. Preço: fica Lento na rodada seguinte", "Hermes"], ["5", "Égide Verdadeira", "Escudo", "Defesa +4", "Olhar da Égide (6 PE): inimigos em vista fazem Mente DT 20 ou ficam Assustados por 2 rodadas, e um poder inimigo é refletido. Preço: perde 2 de SAN", "Atena"], ["6", "Fornalha do Primeiro Fogo", "Martelo (pesada)", "1d10+4", "Forja do Mundo (6 PE): 6d6 de fogo em área e +2 em armas e armaduras de aliados por 2 rodadas. Preço: perde 5 PV por queimadura", "Hefesto"]]}, {"raridade": "Lendária", "rows": [["7", "Lâmina da Arrebentação", "Espada (média)", "1d8+3", "Corte da Onda (4 PE): onda que atinge 2 alvos e empurra 3 m", "Poseidon"], ["8", "Estandarte do Campo de Batalha", "Foco", "Defesa +1", "Brado de Guerra (4 PE): aliados em 6 m ganham +2 em ataques por 1 rodada, recuperam 2d8 PV e perdem Assustado", "Ares"], ["9", "Capuz das Almas", "Armadura leve", "Reduz 2", "Passo Fantasma (4 PE): ignora um ataque por 1 rodada e enxerga espíritos", "Hades"], ["10", "Sandálias Aladas de Prata", "Acessório", "+6 m de movimento", "Voo Curto (4 PE): voa por 1 rodada", "Hermes"], ["11", "Lança da Estratégia", "Lança (média)", "1d8+3", "Marca Tática (4 PE): alvo marcado sofre +3 dos aliados por 2 rodadas", "Atena"], ["12", "Martelo da Forja Viva", "Martelo (pesada)", "1d10+3", "Chama Viva (4 PE): o acerto deixa o alvo Em chamas", "Hefesto"], ["13", "Couraça de Escamas de Drakon", "Armadura pesada", "Reduz 4, Defesa +1", "Resistência a fogo. -1 em AGI", "Qualquer"], ["14", "Arco da Caçadora Lunar", "Arco", "1d8+3", "Flecha Perseguidora (4 PE): ignora cobertura", "Qualquer"]]}, {"raridade": "Épica", "rows": [["15", "Fúria da Maré", "Espada (média)", "1d8+2", "+1d6 de dano de água perto de água. 2 PE: empurra o alvo", "Poseidon"], ["16", "Gládio do Crepúsculo", "Espada (média)", "1d8+2", "2 PE: golpe em arco que atinge todos os inimigos adjacentes", "Ares"], ["17", "Lâmina Silente", "Adaga (leve)", "1d6+2", "Ataque silencioso. 2 PE: ignora 2 de Defesa de criaturas sobrenaturais", "Hades"], ["18", "Bastão do Mensageiro", "Bastão (leve)", "1d6+2", "2 PE: move 9 m sem provocar", "Hermes"], ["19", "Égide Menor", "Escudo", "Defesa +3", "2 PE: reação que reduz 6 de dano de um aliado", "Atena"], ["20", "Martelo de Fornalha", "Martelo (pesada)", "1d10+2", "+1d6 de fogo. 2 PE: aquece o metal e Atordoa", "Hefesto"], ["22", "Escudo de Pele de Hidra", "Escudo", "Defesa +2", "Resiste a veneno", "Qualquer"], ["23", "Couraça do Legionário", "Armadura pesada", "Reduz 3", "-1 em AGI", "Qualquer"], ["24", "Manto de Sombras Tecidas", "Armadura leve", "Reduz 1", "Defesa +2 no escuro", "Qualquer"], ["25", "Lança do Trovão Menor", "Lança (média)", "1d8+2", "2 PE: descarga em área pequena", "Qualquer"]]}, {"raridade": "Rara", "rows": [["26", "Lâmina de Prata Lunar", "Espada (média)", "1d8+1", "+2 de dano contra mortos e espíritos", "Qualquer"], ["27", "Arco de Freixo Silencioso", "Arco", "1d8+1", "Disparo silencioso", "Qualquer"], ["28", "Lança de Caçador de Feras", "Lança (média)", "1d8+1", "Alcance de 3 m", "Qualquer"], ["29", "Adaga de Obsidiana", "Adaga (leve)", "1d6+1", "Um crítico deixa Sangrando", "Qualquer"], ["30", "Gládio Serrilhado", "Espada (média)", "1d8+1", "Ignora 1 de armadura", "Qualquer"], ["31", "Escudo de Bronze Polido", "Escudo", "Defesa +2", "Uma vez por sessão, ofusca um atacante", "Qualquer"], ["32", "Armadura de Escamas de Serpente", "Armadura média", "Reduz 2", "+1 em testes de natação", "Qualquer"], ["33", "Manto de Cinzas", "Armadura leve", "Reduz 1", "Resiste a fogo pequeno", "Qualquer"], ["34", "Martelo de Ferreiro", "Martelo (pesada)", "1d10+1", "Um crítico deixa Atordoado", "Qualquer"], ["35", "Sandálias de Mensageiro", "Acessório", "+3 m de movimento", "Nenhuma", "Qualquer"], ["36", "Colar de Âmbar Solar", "Acessório", "+1 em Mente", "Nenhuma", "Qualquer"], ["37", "Anel de Coral", "Acessório", "Respira 1 minuto sob a água", "Nenhuma", "Qualquer"]]}, {"raridade": "Normal", "rows": [["38", "Espada Curta de Bronze Sagrado", "Espada (média)", "1d8", "Fere monstros", "Qualquer"], ["39", "Adaga de Bronze", "Adaga (leve)", "1d6", "Fere monstros", "Qualquer"], ["40", "Lança de Caça", "Lança (média)", "1d8", "Alcance de 2 m", "Qualquer"], ["41", "Arco Curto", "Arco", "1d8", "Usa AGI", "Qualquer"], ["42", "Funda", "Arremesso", "1d6", "Alcance de 20 m", "Qualquer"], ["43", "Machado de Batalha", "Machado (pesada)", "1d10", "Nenhuma", "Qualquer"], ["44", "Cajado de Madeira", "Cajado (média)", "1d6", "Duas mãos", "Qualquer"], ["45", "Escudo Redondo", "Escudo", "Defesa +1", "Nenhuma", "Qualquer"], ["46", "Armadura de Couro Reforçado", "Armadura leve", "Reduz 1", "Nenhuma", "Qualquer"], ["47", "Peitoral de Bronze", "Armadura média", "Reduz 2", "Nenhuma", "Qualquer"], ["48", "Elmo de Bronze", "Acessório", "Defesa +1 contra projéteis", "Nenhuma", "Qualquer"], ["49", "Rede de Caça", "Arremesso", "—", "Alcance de 3 m. Agarrado (FOR DT 12)", "Qualquer"], ["50", "Tocha Sagrada", "Arma improvisada", "1d4 de fogo", "Ilumina a área", "Qualquer"], ["51", "Capa de Viajante", "Acessório", "+1 em testes de viagem e clima", "Nenhuma", "Qualquer"]]}], "consum": [["Ambrosia", "+10 PV, +10 PE e +5 SAN por unidade"], ["Bálsamo de Ares", "+5 PV"]], "reliq": [], "leg": [["1", "Mítica", "+4 ou +2d6", "Muda a cena. 6 PE, recarga de 3 rodadas, e traz um Preço", ""], ["2", "Lendária", "+3", "Efeito forte. 4 PE", ""], ["3", "Épica", "+2", "Uma propriedade. 2 PE opcional", ""], ["4", "Rara", "+1", "Uma propriedade menor, sem custo", ""], ["5", "Normal", "+0", "Nenhuma", ""]]};
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const ler = (k) => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } };
+  const gravar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const norm = (s) => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let atualMapa = null;
+
+  const ABAS = [{ id: "inicio", nome: "Início" }, ...MAPAS.map((m) => ({ id: m.id, nome: m.liberado ? m.nome : "🔒 Em breve", mapa: true, bloq: !m.liberado })), { id: "bestiario", nome: "Bestiário" }, { id: "itens", nome: "Itens" }, { id: "livro", nome: "Livro do Jogador" }, { id: "mestra", nome: "🔒 Mestra" }];
+  $("abas").innerHTML = ABAS.map((a) => `<button class="aba${a.bloq ? " bloq" : ""}" role="tab" data-id="${a.id}" ${a.bloq ? "disabled" : ""}>${a.nome}</button>`).join("");
+
+  function mostrar(id) {
+    const a = ABAS.find((x) => x.id === id); if (!a || a.bloq) id = "inicio";
+    const ehMapa = MAPAS.some((m) => m.id === id);
+    ["inicio", "mapa", "bestiario", "itens", "livro", "mestra"].forEach((p) => { $("p-" + p).hidden = p !== (ehMapa ? "mapa" : id); });
+    document.querySelectorAll(".aba").forEach((b) => b.setAttribute("aria-selected", b.dataset.id === id));
+    if (ehMapa) {
+      const m = MAPAS.find((x) => x.id === id); atualMapa = id;
+      $("mapa").src = "mapas/" + id + ".html"; $("mapa").title = "Mapa: " + m.nome;
+      $("t-obs").textContent = "Observações · " + m.nome;
+      $("obs").innerHTML = m.obs.map((o) => "<li>" + esc(o) + "</li>").join("");
+      $("notas").value = ler("notas-" + id);
+    }
+    if (id === "mestra") mestraMostrar();
+    gravar("aba-atual", id); window.scrollTo(0, 0);
+  }
+  $("abas").addEventListener("click", (e) => { const b = e.target.closest(".aba"); if (b && !b.disabled) mostrar(b.dataset.id); });
+  $("notas").addEventListener("input", () => gravar("notas-" + atualMapa, $("notas").value));
+
+  // ===== Início =====
+  $("p-inicio").innerHTML = `<div class="destaque"><h2>Bem-vindos ao Oráculo Perdido</h2><p>Escolham uma aba para explorar um mapa, consultar uma criatura ou conferir um item.</p></div>
+    <h2>Mapas</h2><div class="grade" id="g-mapas"></div>
+    <h2 style="margin-top:28px">Consulta</h2><div class="grade">
+     <button class="card" data-ir="bestiario"><h3>Bestiário</h3><p>${DADOS.bes.reduce((n, g) => n + g.rows.length, 0)} criaturas do Outro Lado e ${DADOS.aliados.length} aliadas.</p></button>
+     <button class="card" data-ir="itens"><h3>Itens</h3><p>Armas, armaduras, acessórios e consumíveis.</p></button>
+     <button class="card" data-ir="livro"><h3>Livro do Jogador</h3><p>Regras, níveis, perícias e poderes de cada linhagem.</p></button></div>`;
+  $("g-mapas").innerHTML = MAPAS.map((m) => `<button class="card${m.liberado ? "" : " bloq"}" ${m.liberado ? `data-ir="${m.id}"` : "disabled"}><h3>${m.liberado ? esc(m.nome) : "🔒 Em breve"}</h3><p>${m.liberado ? esc(m.sub) : "Ainda não liberado."}</p></button>`).join("");
+  $("p-inicio").addEventListener("click", (e) => { const c = e.target.closest("[data-ir]"); if (c) mostrar(c.dataset.ir); });
+
+
+  // ===== Livro do Jogador =====
+  let capAtual = 0;
+  function capitulo(n) {
+    const caps = document.querySelectorAll("#p-livro .cap"); capAtual = Math.max(0, Math.min(caps.length - 1, n));
+    caps.forEach((c, i) => { c.hidden = i !== capAtual; });
+    document.querySelectorAll("#l-chips .chip").forEach((b, i) => b.setAttribute("aria-selected", i === capAtual));
+    $("l-sel").value = capAtual; $("l-ant").disabled = capAtual === 0; $("l-prox").disabled = capAtual === caps.length - 1;
+    gravar("livro-cap", String(capAtual)); window.scrollTo(0, 0);
+  }
+  $("l-chips").addEventListener("click", (e) => { const b = e.target.closest(".chip"); if (b) capitulo(+b.dataset.cap); });
+  $("l-sel").addEventListener("change", () => capitulo(+$("l-sel").value));
+  $("l-ant").addEventListener("click", () => capitulo(capAtual - 1));
+  $("l-prox").addEventListener("click", () => capitulo(capAtual + 1));
+  capitulo(parseInt(ler("livro-cap"), 10) || 0);
+
+  // ===== Bestiário =====
+  function bestiario() {
+    const q = norm($("b-busca").value.trim()), tp = $("b-tipo").value; let h = "", total = 0;
+    DADOS.bes.forEach((g) => {
+      const rs = g.rows.filter((r) => (!tp || r[1].trim().endsWith(tp)) && (!q || norm(r.filter((_, i) => i !== 2).join(" ")).includes(q)));
+      if (!rs.length) return; total += rs.length;
+      h += `<h3 class="grupo">${esc(g.grupo)}</h3><div class="rol"><table><thead><tr><th>Criatura</th><th>NA</th><th>Def</th><th>Atq</th><th>Dano</th><th>Habilidades</th></tr></thead><tbody>` +
+        rs.map((r) => `<tr><td class="nome">${esc(r[0])}</td><td><span class="tag">${esc(r[1])}</span></td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${esc(r[5])}</td><td>${esc(r[6])}</td></tr>`).join("") + `</tbody></table></div>`;
+    });
+    if (!tp) {
+      const al = DADOS.aliados.filter((r) => !q || norm(r.join(" ")).includes(q));
+      if (al.length) { total += al.length; h += `<h3 class="grupo">Criaturas neutras e aliadas</h3><div class="rol"><table><thead><tr><th>Criatura</th><th>Papel</th><th>Uso</th></tr></thead><tbody>` + al.map((r) => `<tr><td class="nome">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("") + `</tbody></table></div>`; }
+    }
+    $("b-lista").innerHTML = total ? h : `<p class="vazio">Nenhuma criatura encontrada.</p>`;
+  }
+  $("b-busca").addEventListener("input", bestiario); $("b-tipo").addEventListener("change", bestiario);
+
+  // ===== Itens =====
+  $("i-rar").innerHTML += DADOS.itens.map((g) => `<option value="${g.raridade}">${g.raridade}</option>`).join("") + `<option value="Consumíveis">Consumíveis</option>`;
+  const tabela = (cab, linhas) => `<div class="rol"><table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${linhas.map((r) => `<tr>${r.map((c, i) => `<td${i === 0 ? ' class="nome"' : ""}>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  function itens() {
+    const q = norm($("i-busca").value.trim()), rar = $("i-rar").value; let h = "", total = 0;
+    const ok = (r) => !q || norm(r.join(" ")).includes(q);
+    if (!rar || rar === "Raridade") { /* sem filtro */ }
+    DADOS.itens.forEach((g) => {
+      if (rar && rar !== g.raridade) return;
+      const rs = g.rows.filter(ok); if (!rs.length) return; total += rs.length;
+      const info = DADOS.leg.find((l) => l[1] === g.raridade);
+      h += `<h3 class="grupo">${g.raridade}${info ? ` <span class="tag">${esc(info[2])}</span>` : ""}</h3>` + (info ? `<p class="peq" style="margin:-4px 0 10px">${esc(info[3])}.</p>` : "") +
+        tabela(["Item", "Tipo", "Dano ou Defesa", "Propriedade", "Requisito"], rs.map((r) => [r[1], r[2], r[3], r[4], r[5]]));
+    });
+    if (!rar || rar === "Consumíveis") { const rs = DADOS.consum.filter(ok); if (rs.length) { total += rs.length; h += `<h3 class="grupo">Consumíveis</h3>` + tabela(["Consumível", "Efeito"], rs); } }
+    if (!rar || rar === "Relíquias") { const rs = DADOS.reliq.filter(ok); if (rs.length) { total += rs.length; h += `<h3 class="grupo">Relíquias</h3>` + tabela(["Relíquia", "Sessão", "Efeito"], rs); } }
+    $("i-lista").innerHTML = total ? h : `<p class="vazio">Nenhum item encontrado.</p>`;
+  }
+  $("i-busca").addEventListener("input", itens); $("i-rar").addEventListener("change", itens);
+
+  // ===== Mestra (conteúdo criptografado em mestra.enc.js, só abre com a senha) =====
+  const mUrls = (window.MESTRA_URLS = {});
+  let mAberta = false, mRO = null;
+  const mB64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+  const mCarregar = () => new Promise((ok, falha) => {
+    if (window.MESTRA_ENC) return ok(window.MESTRA_ENC);
+    const sc = document.createElement("script"); sc.src = "mestra.enc.js";
+    sc.onload = () => ok(window.MESTRA_ENC); sc.onerror = () => falha(new Error("arquivo")); document.head.appendChild(sc);
+  });
+  async function mDecifrar(senha) {
+    if (!(window.crypto && crypto.subtle)) throw new Error("crypto");
+    const e = await mCarregar();
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveKey"]);
+    const chave = await crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt: mB64(e.salt), iterations: e.iter }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    const claro = await crypto.subtle.decrypt({ name: "AES-GCM", iv: mB64(e.iv) }, chave, mB64(e.data));
+    return JSON.parse(new TextDecoder().decode(claro));
+  }
+  function mAbrir(pacote) {
+    Object.entries(pacote.mapas).forEach(([id, html]) => { mUrls[id] = URL.createObjectURL(new Blob([html], { type: "text/html" })); });
+    const html = pacote.index
+      .replace('"mapas/" + id + ".html"', 'window.parent.MESTRA_URLS[id]')
+      .replace("</style>", "html,body{min-height:0 !important}</style>");
+    const fr = $("m-frame");
+    fr.onload = () => {
+      const d = fr.contentDocument; if (!d) return;
+      if (mRO) mRO.disconnect();
+      mRO = new ResizeObserver(() => { fr.style.height = d.documentElement.scrollHeight + "px"; }); mRO.observe(d.body);
+    };
+    fr.srcdoc = html; mAberta = true;
+    mDocsMontar(pacote.docs || {});
+  }
+  function mTrancar() {
+    if (mRO) { mRO.disconnect(); mRO = null; }
+    $("m-frame").onload = null; $("m-frame").srcdoc = "";
+    Object.keys(mUrls).forEach((k) => { URL.revokeObjectURL(mUrls[k]); delete mUrls[k]; });
+    mDocsLimpar();
+    mAberta = false; $("m-senha").value = ""; $("m-aviso").textContent = ""; mostrar("inicio");
+  }
+  // ----- Documentos da mestra (pacote.docs: cada arquivo de "mapas mestra/docs" vira uma aba) -----
+  let mDocsHtml = {}, mDocAtual = 0;
+  function mAba(qual) {
+    $("m-frame").style.display = qual === "mapas" ? "block" : "none"; $("m-docs").hidden = qual === "mapas";
+    document.querySelectorAll("#m-abas button").forEach((b) => b.setAttribute("aria-selected", b.dataset.aba === qual));
+    if (qual !== "mapas") mDocAbrir(qual);
+  }
+  function mCap(n) {
+    const caps = document.querySelectorAll("#md-corpo .cap"); if (!caps.length) return;
+    mDocAtual = Math.max(0, Math.min(caps.length - 1, n));
+    caps.forEach((c, i) => { c.hidden = i !== mDocAtual; });
+    document.querySelectorAll("#md-chips .chip").forEach((b, i) => b.setAttribute("aria-selected", i === mDocAtual));
+    $("md-sel").value = mDocAtual; $("md-ant").disabled = mDocAtual === 0; $("md-prox").disabled = mDocAtual === caps.length - 1;
+    $("m-docs").scrollIntoView({ block: "start" });
+  }
+  function mDocAbrir(id) {
+    $("md-corpo").innerHTML = mDocsHtml[id] || "";
+    const caps = [...document.querySelectorAll("#md-corpo .cap")];
+    $("md-chips").innerHTML = caps.map((c, i) => `<button class="chip" type="button" data-cap="${i}">${c.querySelector("h2").textContent.split(".")[0]}</button>`).join("");
+    $("md-sel").innerHTML = caps.map((c, i) => `<option value="${i}">${c.querySelector("h2").textContent.replace(/</g, "&lt;")}</option>`).join("");
+    mCap(0);
+  }
+  function mDocsMontar(docs) {
+    mDocsHtml = docs; const ids = Object.keys(docs);
+    $("m-abas").innerHTML = `<button type="button" data-aba="mapas" aria-selected="true">Mapas</button>` + ids.map((id) => {
+      const t = (docs[id].match(/data-titulo="([^"]*)"/) || [, id])[1];
+      return `<button type="button" data-aba="${id}" aria-selected="false">${t}</button>`;
+    }).join("");
+    $("m-abas").hidden = !ids.length; mAba("mapas");
+  }
+  function mDocsLimpar() {
+    mDocsHtml = {}; $("md-corpo").innerHTML = ""; $("md-chips").innerHTML = ""; $("md-sel").innerHTML = ""; $("m-abas").innerHTML = ""; $("m-docs").hidden = true; $("m-frame").style.display = "";
+  }
+  $("m-abas").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) mAba(b.dataset.aba); });
+  $("md-chips").addEventListener("click", (e) => { const b = e.target.closest(".chip"); if (b) mCap(+b.dataset.cap); });
+  $("md-sel").addEventListener("change", () => mCap(+$("md-sel").value));
+  $("md-ant").addEventListener("click", () => mCap(mDocAtual - 1));
+  $("md-prox").addEventListener("click", () => mCap(mDocAtual + 1));
+  function mestraMostrar() {
+    $("m-cadeado").hidden = mAberta; $("m-aberto").hidden = !mAberta;
+    if (!mAberta) setTimeout(() => $("m-senha").focus(), 0);
+  }
+  $("m-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const senha = $("m-senha").value, av = $("m-aviso"), bt = $("m-entrar");
+    if (!senha) { av.textContent = "Digite a senha."; return; }
+    bt.disabled = true; av.textContent = "Verificando...";
+    try {
+      mAbrir(await mDecifrar(senha)); $("m-senha").value = ""; av.textContent = ""; mestraMostrar();
+    } catch (e) {
+      av.textContent = e.message === "arquivo" ? "Não consegui carregar mestra.enc.js. Confira se o arquivo está na mesma pasta do site."
+        : e.message === "crypto" ? "Este navegador bloqueou a verificação. Abra o site por https ou por um servidor local."
+        : "Senha incorreta.";
+      $("m-senha").select();
+    }
+    bt.disabled = false;
+  });
+  $("m-trancar").addEventListener("click", mTrancar);
+
+  bestiario(); itens(); mostrar("inicio");
+})();
+</script>
+<script src="efeitos.js"></script>
+</body></html>

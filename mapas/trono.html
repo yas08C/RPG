@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa do Trono da Entidade</title>
+<style>
+/* ==TEMA== padrão visual do site: preto, roxo e vinho, com véus roxos na diagonal. */
+:root {
+  --branco:#0d0b12; --branco-fundo:#050408; --cinza-claro:#1d1726; --cinza:#a79fb6; --preto:#ece7f4;
+  --roxo:#a16be6; --roxo-escuro:#d3b5ff; --vinho:#e0588f; --vinho-escuro:#ffc2d6;
+  --degrade:linear-gradient(120deg,#7136a8,#8b286c,#751b3d);
+  --sombra:0 4px 18px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display:none !important; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:var(--branco-fundo); color:var(--preto); min-height:100vh; line-height:1.6;
+  display:flex; flex-direction:column; align-items:center; gap:14px; padding:22px 16px 30px; }
+#cab { width:100%; max-width:1000px; background:var(--branco); padding:16px 24px; text-align:center; border-radius:12px 12px 0 0;
+  border-bottom:3px solid transparent; border-image:var(--degrade) 1; box-shadow:var(--sombra); }
+.selo { font-size:11px; font-weight:700; letter-spacing:.25em; color:var(--cinza); text-transform:uppercase; }
+h1 { color:var(--roxo-escuro); font-size:1.6rem; }
+.sub { color:var(--cinza); font-size:.95rem; max-width:40em; margin:2px auto 0; }
+.greca { display:none; }
+.hud { display:flex; gap:18px; font-size:1rem; align-items:center; flex-wrap:wrap; justify-content:center; color:var(--cinza); }
+.hud b { color:var(--roxo-escuro); font-variant-numeric:tabular-nums; }
+.pill { padding:3px 12px; border:1px solid var(--roxo); color:var(--roxo); border-radius:20px; font-size:.9rem; font-weight:700; background:var(--branco); }
+#aviso { min-height:1.4em; text-align:center; max-width:40em; line-height:1.4; color:var(--cinza); font-style:italic; }
+#aviso.ok { color:var(--roxo); font-style:normal; } #aviso.erro { color:var(--vinho); }
+#aviso.memorize { color:var(--vinho); font-style:normal; font-weight:700; }
+.dica { font-size:.85rem; color:var(--cinza); text-align:center; max-width:40em; }
+.rodape { width:100%; max-width:1000px; padding:16px; text-align:center; font-size:.8rem; color:var(--cinza); background:var(--branco);
+  border-top:3px solid transparent; border-image:var(--degrade) 1; }
+.acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:600; font-size:15px; padding:10px 22px; background:var(--degrade); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:.3s; }
+button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 18px rgba(161,107,230,.35); filter:brightness(1.08); }
+button:disabled { opacity:.45; cursor:default; }
+button.sec { background:var(--branco); color:var(--roxo-escuro); border:1px solid #34254a; }
+#vitoria, #viagem { position:fixed; inset:0; display:none; place-items:center; background:rgba(3,2,6,.9); padding:20px; z-index:6; }
+#vitoria.aberta, #viagem.aberta { display:grid; }
+.caixa { text-align:center; max-width:30em; padding:28px 26px; background:var(--branco); border-radius:12px; box-shadow:var(--sombra); border:1px solid #271c38; border-top:4px solid var(--roxo); color:var(--preto); }
+.caixa p.frase { color:var(--roxo-escuro); font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; line-height:1.35; margin:0 0 18px; }
+.caixa p.frase.derrota { color:var(--vinho); }
+::-webkit-scrollbar { width:9px; } ::-webkit-scrollbar-track { background:#0a0810; }
+::-webkit-scrollbar-thumb { background:var(--degrade); border-radius:10px; }
+::selection { background:var(--roxo); color:#fff; }
+/* ==FIM-TEMA== */
+
+.mundo { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:820px) { .mundo { grid-template-columns:1fr; } }
+.mapa { position:relative; container-type:inline-size; aspect-ratio:1000/1200; border:1px solid #2b2040; border-radius:12px; background:#07111d; box-shadow:var(--sombra); line-height:0; user-select:none; overflow:hidden; }
+.mapa > svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.rot { position:absolute; transform:translate(-50%,-50%); white-space:nowrap; padding:.35em .9em; font-weight:700; font-size:max(8.5px,1.7cqw); letter-spacing:.04em; text-transform:uppercase; line-height:1.25; color:var(--roxo-escuro); background:rgba(14,10,20,.92); border:1.5px solid var(--roxo); border-radius:6px; box-shadow:0 2px 10px rgba(33,29,37,.45); cursor:pointer; transition:.2s; }
+.rot:hover:not(:disabled), .rot:focus-visible { background:var(--degrade); color:#fff; border-color:transparent; transform:translate(-50%,-50%); filter:none; box-shadow:0 0 16px rgba(113,54,168,.7); }
+.rot.sel { border-color:var(--vinho); box-shadow:0 0 0 2px var(--vinho), 0 0 16px rgba(117,27,61,.5); }
+.rot.saida { animation:pisca 1.2s infinite alternate; }
+@keyframes pisca { from { box-shadow:0 0 3px rgba(139,40,108,.3), 0 2px 10px rgba(33,29,37,.45); } to { box-shadow:0 0 18px rgba(139,40,108,.95), 0 2px 10px rgba(33,29,37,.45); } }
+.pin { position:absolute; width:clamp(18px,2.7cqw,30px); height:clamp(18px,2.7cqw,30px); transform:translate(-50%,-50%); padding:0; border-radius:50%; border:2px solid var(--roxo); background:rgba(14,10,20,.92); cursor:pointer; line-height:1; font-size:clamp(9px,1.3cqw,14px); color:var(--roxo); display:grid; place-items:center; }
+.pin:hover:not(:disabled), .pin.sel { background:var(--roxo); color:#fff; transform:translate(-50%,-50%); box-shadow:0 0 14px rgba(113,54,168,.8); }
+.pin.visitado::after { content:"✓"; }
+.pin.aqui { width:clamp(26px,3.8cqw,40px); height:clamp(26px,3.8cqw,40px); background:var(--vinho); color:#fff; border-color:#fff; font-size:clamp(13px,1.9cqw,20px); animation:bate 1.6s infinite; }
+.pin.aqui::after { content:"⚑"; }
+@keyframes bate { 0%,100% { box-shadow:0 0 0 3px rgba(117,27,61,.35), 0 0 16px rgba(139,40,108,.7); } 50% { box-shadow:0 0 0 9px rgba(117,27,61,.1), 0 0 26px rgba(139,40,108,1); } }
+.painel { padding:20px; background:var(--branco); border:1px solid #271c38; border-radius:12px; box-shadow:var(--sombra); position:sticky; top:12px; line-height:1.55; }
+.painel .tipo { margin:0 0 2px; font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cinza); }
+.painel h2 { margin:0 0 8px; font-size:1.3rem; color:var(--roxo-escuro); }
+.painel p { margin:0 0 12px; font-size:.93rem; }
+.painel h3 { margin:14px 0 6px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--vinho); }
+.nota { padding:10px 12px; border-left:4px solid var(--vinho); background:#24111c; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--vinho-escuro); margin-bottom:12px; }
+.obs { padding:10px 12px; border-left:4px solid var(--roxo); background:#1a1228; border-radius:0 8px 8px 0; font-size:.88rem; color:var(--roxo-escuro); margin-bottom:12px; }
+.saidas { display:flex; gap:8px; flex-wrap:wrap; }
+.saidas button, .painel .mover { padding:7px 14px; font-size:.82rem; }
+.painel .mover { width:100%; margin-top:6px; }
+.trilha { font-size:.8rem; color:var(--cinza); margin:12px 0 0; }
+.modo { display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--cinza); cursor:pointer; }
+.modo input { accent-color:var(--roxo); width:16px; height:16px; }
+#viagem .caixa { max-width:32em; }
+#viagem .frase { font-size:clamp(1.2rem,4vw,1.6rem); margin-bottom:12px; }
+#viagem p { margin:0 0 14px; }
+#relogio { font:bold clamp(2.6rem,10vw,4rem) ui-monospace,Consolas,monospace; color:var(--roxo-escuro); margin:6px 0 10px; font-variant-numeric:tabular-nums; }
+.barra { height:8px; border-radius:8px; background:var(--cinza-claro); margin:0 0 18px; overflow:hidden; }
+.barra i { display:block; height:100%; width:0; background:var(--degrade); }
+#viagem .botoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ===== VÉUS: linhas finas em degradê roxo cruzando o fundo na diagonal ===== */
+html { background:#050408; scroll-behavior:smooth; }
+body { background:transparent; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' viewBox='0 0 1600 1000'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%237136a8' stop-opacity='0'/><stop offset='.25' stop-color='%239a5ce0'/><stop offset='.55' stop-color='%238b286c'/><stop offset='.8' stop-color='%23b57cff'/><stop offset='1' stop-color='%237136a8' stop-opacity='0'/></linearGradient><linearGradient id='v' gradientUnits='userSpaceOnUse' x1='-900' y1='0' x2='1900' y2='0'><stop offset='0' stop-color='%23b57cff' stop-opacity='0'/><stop offset='.5' stop-color='%237136a8'/><stop offset='1' stop-color='%238b286c' stop-opacity='0'/></linearGradient><filter id='b' x='-10%' y='-10%' width='120%' height='120%'><feGaussianBlur stdDeviation='9'/></filter></defs><g transform='rotate(-34 800 500) translate(0 -20) scale(1.5)'><g filter='url(%23b)' opacity='.22'><line x1='-900' x2='1900' y1='160' y2='160' stroke='url(%23v)' stroke-width='22'/><line x1='-900' x2='1900' y1='480' y2='480' stroke='url(%23v)' stroke-width='30'/><line x1='-900' x2='1900' y1='760' y2='760' stroke='url(%23v)' stroke-width='18'/></g><line x1='-900' x2='1900' y1='40' y2='40' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='130' y2='130' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.8'/><line x1='-900' x2='1900' y1='215' y2='215' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/><line x1='-900' x2='1900' y1='300' y2='300' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='372' y2='372' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.9'/><line x1='-900' x2='1900' y1='455' y2='455' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.5'/><line x1='-900' x2='1900' y1='520' y2='520' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.75'/><line x1='-900' x2='1900' y1='610' y2='610' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.4'/><line x1='-900' x2='1900' y1='690' y2='690' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.85'/><line x1='-900' x2='1900' y1='775' y2='775' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.55'/><line x1='-900' x2='1900' y1='850' y2='850' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.7'/><line x1='-900' x2='1900' y1='935' y2='935' stroke='url(%23g)' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.45'/></g></svg>") center/cover no-repeat; }
+body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(113,54,168,.16), transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(139,40,108,.12), transparent 55%); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid #b57cff; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+  <header id="cab">
+    <p class="selo">Ordem · Mapa da Sessão 4</p>
+    <h1>O Trono da Entidade</h1>
+    <p class="sub">Quatro ilhas no vazio, ligadas por pontes de luz.</p>
+    <div class="greca"></div>
+  </header>
+
+  <div class="hud"><span>Grupo em <b id="onde"></b></span><span>Lugares visitados <b id="cont"></b></span></div>
+  <div id="aviso" aria-live="polite"></div>
+
+  <div class="mundo">
+    <div class="mapa" id="mapa">
+      <svg id="arte" viewBox="0 0 1000 1200" role="img" aria-label="Mapa ilustrado: Atenas em ruínas, Nova York corrompida, Fragmentos do Labirinto e o Trono"></svg>
+      <svg id="sobre" viewBox="0 0 1000 1200"></svg>
+    </div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </div>
+
+  <div class="acoes">
+    <label class="modo" hidden><input type="checkbox" id="modo"> Modo mestra (notas e mover para qualquer lugar)</label>
+    <button id="reiniciar" class="sec">Reiniciar mapa</button>
+  </div>
+  <p class="dica">O grupo começa em Atenas em ruínas e segue pelas pontes de luz. Os locais que brilham são as saídas do ponto onde o grupo está.</p>
+  <p class="rodape">Ordem Paranormal × Mitologia Grega</p>
+
+  <div id="viagem" role="dialog" aria-modal="true">
+    <div class="caixa">
+      <p class="frase" id="v-titulo"></p>
+      <p id="v-texto"></p>
+      <div id="relogio">02:00</div>
+      <div class="barra"><i id="v-barra"></i></div>
+      <div class="botoes"><button id="v-chegar">Chegar agora (mestra)</button><button id="v-cancelar" class="sec">Cancelar viagem (mestra)</button></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===== Ajustes fáceis de mexer =====
+  const INICIO = "atenas";   // onde o grupo começa
+  const OBS_AVENIDA = "";
+  // rot = onde fica a placa com o nome (x, y no mapa de 1000 x 1200); pin = ponto do local no cenário
+  const LUGARES = {
+    atenas: { nome: "Atenas em ruínas", placa: "Atenas em Ruínas", rot: [500, 1128], pin: [500, 975],
+      tipo: "Abertura da cena",
+      desc: "Colunas partidas flutuam sobre o vazio e o que sobrou do Partenon queima em roxo. É a última margem do mundo que o grupo conhece, e daqui partem as pontes de luz.",
+      mestra: "" },
+    nova: { nome: "Nova York corrompida", placa: "Nova York Corrompida", rot: [262, 850], pin: [262, 690],
+      tipo: "Memória distorcida",
+      desc: "Prédios inclinados e janelas que piscam em rosa. No centro, a fachada de um museu que o grupo reconhece bem demais.",
+      mestra: "" },
+    fragmentos: { nome: "Fragmentos do Labirinto", placa: "Fragmentos do Labirinto", rot: [748, 850], pin: [748, 690],
+      tipo: "Espaço instável",
+      desc: "Pedaços de corredores giram sobre a ilha. As paredes se movem quando ninguém olha, e o chão nem sempre fica onde estava.",
+      mestra: "" },
+    trono: { nome: "Trono da Entidade", placa: "Trono da Entidade", rot: [500, 380], pin: [500, 235],
+      tipo: "Arena final",
+      desc: "Um trono negro sob um feixe de luz. Duas silhuetas brilhantes esperam ao pé dele: o Oráculo e Rachel.",
+      mestra: "" }
+  };
+  const ARESTAS = [
+    { a: "atenas", b: "nova", pts: [[330, 930]] },
+    { a: "atenas", b: "fragmentos", pts: [[680, 930]] },
+    { a: "nova", b: "trono", pts: [[270, 440]] },
+    { a: "fragmentos", b: "trono", pts: [[730, 440]] }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const W = 1000, H = 1200;
+  const pct = (v, t) => (v / t * 100) + "%";
+  const achar = (x, y) => ARESTAS.find((e) => (e.a === x && e.b === y) || (e.a === y && e.b === x));
+  const vizinhosDe = (id) => ARESTAS.filter((e) => e.a === id || e.b === id).map((e) => (e.a === id ? e.b : e.a));
+  let aqui, sel, visitados, trilha, viagem = null;
+
+  function falar(t, cls) { $("aviso").textContent = t; $("aviso").className = cls || ""; }
+  const mestra = () => false;
+  const ligados = (a, b) => !!achar(a, b);
+  const podeIr = (id) => !viagem && id !== aqui && (mestra() || ligados(aqui, id));
+
+  // ===== Arte do mapa =====
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  // ilha flutuante: topo plano irregular e base rochosa pontuda
+  function ilha(R, cx, cy, rx, ry, fundo, cor) {
+    let top = "", n = 14;
+    for (let i = 0; i <= n; i++) { const a = Math.PI * i / n; top += (i ? "L" : "M") + (cx - Math.cos(a) * rx + (R() - .5) * 8).toFixed(1) + " " + (cy - Math.sin(a) * ry * .35 + (R() - .5) * 4).toFixed(1) + " "; }
+    let base = ""; n = 9;
+    for (let i = 1; i < n; i++) { const t = i / n, x = cx + rx - 2 * rx * t, y = cy + fundo * (Math.sin(Math.PI * t) * (.55 + R() * .5)); base += `L${x.toFixed(1)} ${y.toFixed(1)} `; }
+    const d = top.replace("M", "M") + base + "Z";
+    return `<ellipse cx="${cx}" cy="${cy + fundo + 26}" rx="${rx * .7}" ry="12" fill="#000" fill-opacity=".25"/>` +
+      `<path d="${d}" fill="url(#gRocha)" stroke="#1a1030" stroke-width="2.5" stroke-linejoin="round"/>` +
+      `<ellipse cx="${cx}" cy="${cy - ry * .05}" rx="${rx}" ry="${ry * .4}" fill="${cor}" stroke="#1a1030" stroke-width="2.5"/>` +
+      `<ellipse cx="${cx}" cy="${cy - ry * .12}" rx="${rx * .88}" ry="${ry * .3}" fill="#fff" fill-opacity=".07"/>`;
+  }
+  const coluna = (x, y, h, quebrada) => `<g><rect x="${x - 7}" y="${y - h}" width="14" height="${h}" fill="url(#gOssos)" stroke="#2a1b3d" stroke-width="1.5"/>` +
+    (quebrada ? `<polygon points="${x - 7},${y - h} ${x - 2},${y - h - 6} ${x + 3},${y - h + 2} ${x + 7},${y - h - 3} ${x + 7},${y - h}" fill="#d9cfe6" stroke="#2a1b3d" stroke-width="1.2"/>` : `<rect x="${x - 10}" y="${y - h - 6}" width="20" height="7" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="1.5"/>`) +
+    `<rect x="${x - 10}" y="${y - 3}" width="20" height="5" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="1.2"/></g>`;
+
+  function arte() {
+    const R = rng(77);
+    let s = `<defs>
+      <radialGradient id="gVazio" cx=".5" cy=".42" r=".8"><stop offset="0" stop-color="#3b1459"/><stop offset=".55" stop-color="#1c0b33"/><stop offset="1" stop-color="#07030f"/></radialGradient>
+      <radialGradient id="gNeb1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b0308a" stop-opacity=".55"/><stop offset="1" stop-color="#b0308a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gRocha" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a3763"/><stop offset="1" stop-color="#1a1030"/></linearGradient>
+      <linearGradient id="gOssos" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfc3df"/><stop offset=".5" stop-color="#f4eefa"/><stop offset="1" stop-color="#b3a5c8"/></linearGradient>
+      <radialGradient id="gLuz" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe9fb" stop-opacity=".95"/><stop offset=".4" stop-color="#d36cd0" stop-opacity=".5"/><stop offset="1" stop-color="#7136a8" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gFeixe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d8ff" stop-opacity=".9"/><stop offset="1" stop-color="#8b286c" stop-opacity="0"/></linearGradient>
+      <linearGradient id="gPonte" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9b6ff"/><stop offset="1" stop-color="#ff7ab8"/></linearGradient>
+      <filter id="brilho" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+      <filter id="rugoso" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="14"/></filter>
+    </defs>`;
+    s += `<rect width="1000" height="1200" fill="url(#gVazio)"/>`;
+    s += `<ellipse cx="220" cy="300" rx="260" ry="200" fill="url(#gNeb1)"/><ellipse cx="800" cy="900" rx="300" ry="220" fill="url(#gNeb1)" opacity=".7"/><ellipse cx="520" cy="560" rx="220" ry="140" fill="url(#gNeb1)" opacity=".5"/>`;
+    for (let i = 0; i < 170; i++) { const r = R() * 1.6 + .3; s += `<circle cx="${(R() * 1000).toFixed(0)}" cy="${(R() * 1200).toFixed(0)}" r="${r.toFixed(1)}" fill="#fff" fill-opacity="${(.25 + R() * .6).toFixed(2)}"/>`; }
+    // rochas à deriva
+    for (let i = 0; i < 16; i++) { const x = R() * 1000, y = R() * 1200, w = 6 + R() * 16; s += `<polygon points="${x},${y - w} ${x + w},${y - w * .2} ${x + w * .6},${y + w} ${x - w * .8},${y + w * .5}" fill="#2a1b3d" stroke="#5a3d7a" stroke-width="1" opacity=".8"/>`; }
+
+    // pontes de luz (desenhadas atrás das ilhas)
+    const ponte = (x1, y1, x2, y2, cx, cy) => `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="#c070ff" stroke-opacity=".35" stroke-width="26" filter="url(#brilho)"/><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="url(#gPonte)" stroke-width="9" stroke-linecap="round"/><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-dasharray="4 14" stroke-linecap="round"/>`;
+    s += ponte(500, 1000, 262, 735, 330, 930);
+    s += ponte(500, 1000, 748, 735, 680, 930);
+    s += ponte(262, 700, 490, 280, 270, 440);
+    s += ponte(748, 700, 510, 280, 730, 440);
+
+    // === Trono (arena final) ===
+    s += `<ellipse cx="500" cy="250" rx="230" ry="150" fill="url(#gLuz)" opacity=".7"/>`;
+    s += ilha(R, 500, 300, 210, 90, 95, "#3a2552");
+    s += `<ellipse cx="500" cy="296" rx="150" ry="36" fill="none" stroke="#e9b6ff" stroke-opacity=".7" stroke-width="2" stroke-dasharray="3 7"/>`;
+    s += `<ellipse cx="500" cy="296" rx="100" ry="22" fill="none" stroke="#e9b6ff" stroke-opacity=".5" stroke-width="1.5"/>`;
+    s += `<polygon points="470,290 470,205 482,150 500,120 518,150 530,205 530,290" fill="#120820" stroke="#c070ff" stroke-width="2.5"/>`;
+    s += `<polygon points="484,290 484,214 494,164 500,142 506,164 516,214 516,290" fill="#2a1048" stroke="#8b286c" stroke-width="1.5"/>`;
+    s += `<polygon points="462,230 478,196 478,236" fill="#120820" stroke="#c070ff" stroke-width="2"/><polygon points="538,230 522,196 522,236" fill="#120820" stroke="#c070ff" stroke-width="2"/>`;
+    s += `<rect x="488" y="150" width="24" height="3" fill="#ff7ab8"/><circle cx="500" cy="96" r="30" fill="url(#gLuz)"/><circle cx="500" cy="96" r="6" fill="#fff"/>`;
+    s += `<rect x="480" y="-4" width="40" height="110" fill="url(#gFeixe)" opacity=".55"/>`;
+    // Oráculo e Rachel (orbes de luz)
+    s += `<g><circle cx="410" cy="282" r="14" fill="url(#gLuz)"/><circle cx="410" cy="282" r="4" fill="#fff"/><circle cx="590" cy="282" r="14" fill="url(#gLuz)"/><circle cx="590" cy="282" r="4" fill="#ffd6a8"/></g>`;
+    for (let i = 0; i < 6; i++) s += `<polygon points="${330 + i * 68},300 ${338 + i * 68},${268 - R() * 16} ${346 + i * 68},300" fill="#1a1030" stroke="#8b286c" stroke-width="1.5"/>`;
+
+    // === Nova York corrompida ===
+    s += `<ellipse cx="262" cy="680" rx="160" ry="110" fill="url(#gLuz)" opacity=".4"/>`;
+    s += ilha(R, 262, 735, 170, 80, 85, "#2c2140");
+    const pred = [[160, 90, 26], [190, 140, 22], [222, 110, 30], [256, 168, 24], [290, 120, 28], [322, 84, 24], [350, 104, 18]];
+    pred.forEach(([x, h, w], i) => {
+      s += `<g transform="rotate(${(i - 3) * 2.2} ${x + 100} 735)"><rect x="${x + 100 - 30}" y="${735 - h}" width="${w}" height="${h}" fill="#150c26" stroke="#5a3d7a" stroke-width="1.5"/>`;
+      for (let k = 0; k < 6; k++) if (R() < .6) s += `<rect x="${x + 100 - 26 + (k % 2) * 10}" y="${735 - h + 8 + Math.floor(k / 2) * 14}" width="4" height="5" fill="${R() < .5 ? "#ff7ab8" : "#c070ff"}" fill-opacity=".8"/>`;
+      s += `</g>`;
+    });
+    // fachada do museu ao centro
+    s += `<g><rect x="224" y="702" width="78" height="34" fill="#cfc3df" stroke="#2a1b3d" stroke-width="2"/><polygon points="220,702 263,680 306,702" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="2"/>`;
+    for (let i = 0; i < 5; i++) s += `<rect x="${229 + i * 15}" y="705" width="5" height="29" fill="#8f7fa8"/>`;
+    s += `</g><path d="M200 640 l14 28 l-8 12 l20 24 M318 650 l-14 22 l10 14" fill="none" stroke="#ff7ab8" stroke-width="2" stroke-opacity=".85"/>`;
+    s += `<ellipse cx="262" cy="730" rx="26" ry="10" fill="url(#gLuz)"/>`;
+
+    // === Fragmentos do Labirinto ===
+    s += `<ellipse cx="748" cy="680" rx="160" ry="110" fill="url(#gLuz)" opacity=".35"/>`;
+    s += ilha(R, 748, 735, 170, 80, 85, "#2c2140");
+    const frag = [[670, 700, 70, 14, -8], [740, 690, 14, 62, 4], [770, 716, 78, 14, 6], [830, 676, 14, 58, -5], [696, 664, 46, 12, 12], [790, 656, 52, 12, -10]];
+    frag.forEach(([x, y, w, h, r]) => { s += `<g transform="rotate(${r} ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#3d2a58" stroke="#c070ff" stroke-width="1.6"/><rect x="${x}" y="${y}" width="${w}" height="3" fill="#fff" fill-opacity=".25"/></g>`; });
+    // pedaços soltos no ar
+    [[640, 610, 24, 16, 20], [860, 620, 28, 14, -18], [760, 590, 20, 20, 8], [900, 700, 18, 12, 30]].forEach(([x, y, w, h, r]) => { s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2a1b3d" stroke="#8b286c" stroke-width="1.4" transform="rotate(${r} ${x} ${y})"/>`; });
+    s += `<circle cx="748" cy="700" r="34" fill="none" stroke="#e9b6ff" stroke-opacity=".5" stroke-width="2" stroke-dasharray="3 6"><animateTransform attributeName="transform" type="rotate" from="0 748 700" to="360 748 700" dur="24s" repeatCount="indefinite"/></circle>`;
+
+    // === Atenas em ruínas (início) ===
+    s += `<ellipse cx="500" cy="960" rx="210" ry="130" fill="url(#gLuz)" opacity=".35"/>`;
+    s += ilha(R, 500, 1010, 230, 95, 90, "#34244a");
+    s += `<polygon points="330,1004 500,930 670,1004" fill="#2a1b3d" stroke="#5a3d7a" stroke-width="2"/>`;
+    s += `<polygon points="360,1004 400,978 440,1004" fill="#cfc3df" stroke="#2a1b3d" stroke-width="1.5"/>`;
+    s += `<rect x="350" y="1000" width="300" height="8" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="1.5"/>`;
+    [[372, 52, 0], [406, 70, 0], [440, 40, 1], [480, 70, 0], [520, 28, 1], [560, 70, 0], [594, 46, 1], [628, 66, 0]].forEach(([x, h, q]) => { s += coluna(x, 1000, h, q); });
+    s += `<rect x="360" y="926" width="280" height="8" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="1.5" transform="rotate(-1.6 500 930)" opacity="0"/>`;
+    s += `<path d="M360 930 L640 930" stroke="#2a1b3d" stroke-width="0"/>`;
+    s += `<rect x="372" y="944" width="262" height="9" fill="#e9e0f2" stroke="#2a1b3d" stroke-width="1.5" stroke-dasharray="40 14" />`;
+    s += `<path d="M470 1012 l-12 20 l10 8 M540 1014 l10 18" stroke="#ff7ab8" stroke-width="2" fill="none" stroke-opacity=".8"/>`;
+    s += `<circle cx="500" cy="1022" r="6" fill="#ffb347"><animate attributeName="r" values="5;8;5" dur="1.4s" repeatCount="indefinite"/></circle>`;
+    // moldura e bússola
+    s += `<rect x="3" y="3" width="994" height="1194" fill="none" stroke="#c070ff" stroke-opacity=".5" stroke-width="3"/>`;
+    s += `<g transform="translate(95 1100)"><circle r="52" fill="#07030f" fill-opacity=".7" stroke="#c070ff" stroke-width="2"/><polygon points="0,-44 8,-8 44,0 8,8 0,44 -8,8 -44,0 -8,-8" fill="url(#gPonte)" stroke="#2a1b3d" stroke-width="1.5"/><g font-family="Georgia,serif" font-size="15" font-weight="bold" fill="#f6d8ff" text-anchor="middle"><text y="-58">N</text><text y="70">S</text><text x="68" y="5">L</text><text x="-68" y="5">O</text></g></g>`;
+    $("arte").innerHTML = s;
+  }
+
+  // ===== Interface =====
+  function montar() {
+    let h = "";
+    Object.entries(LUGARES).forEach(([id, l]) => {
+      h += `<button class="rot" data-id="${id}" aria-label="${l.nome}" style="left:${pct(l.rot[0], W)};top:${pct(l.rot[1], H)}">${l.placa}</button>`;
+      h += `<button class="pin" data-id="${id}" aria-label="Local ${l.nome}" style="left:${pct(l.pin[0], W)};top:${pct(l.pin[1], H)}"></button>`;
+    });
+    $("mapa").querySelectorAll(".rot,.pin").forEach((e) => e.remove());
+    $("mapa").insertAdjacentHTML("beforeend", h);
+  }
+  function pontos(de, para) {
+    const e = achar(de, para), meio = e && e.pts ? (e.a === de ? e.pts : e.pts.slice().reverse()) : [];
+    return [LUGARES[de].pin, ...meio, LUGARES[para].pin].map((p) => p.join(",")).join(" ");
+  }
+  function desenhar() {
+    let s = `<defs><marker id="seta" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#e5c76b"/></marker></defs>`;
+    for (let i = 1; i < trilha.length; i++) s += `<polyline points="${pontos(trilha[i - 1], trilha[i])}" fill="none" stroke="#8b286c" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12"/>`;
+    vizinhosDe(aqui).forEach((v) => { s += `<polyline points="${pontos(aqui, v)}" fill="none" stroke="#c23a8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14 10" marker-end="url(#seta)" opacity=".95"><animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" repeatCount="indefinite"/></polyline>`; });
+    $("sobre").innerHTML = s;
+
+    $("mapa").querySelectorAll(".rot").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("saida", id !== aqui && ligados(aqui, id)); });
+    $("mapa").querySelectorAll(".pin").forEach((b) => { const id = b.dataset.id; b.classList.toggle("sel", id === sel); b.classList.toggle("aqui", id === aqui); b.classList.toggle("visitado", visitados.has(id) && id !== aqui); });
+    $("onde").textContent = LUGARES[aqui].nome;
+    $("cont").textContent = visitados.size + " / " + Object.keys(LUGARES).length;
+
+    const l = LUGARES[sel], ar = achar(aqui, sel);
+    let botao;
+    if (sel === aqui) botao = `<p class="trilha" style="margin-top:12px">O grupo está aqui.</p>`;
+    else if (podeIr(sel)) botao = `<button class="mover" data-mover="${sel}">${ar && ar.tempo ? "Percorrer a avenida (" + ar.tempo / 60 + " min de interação)" : "Mover o grupo para cá"}</button>`;
+    else botao = `<button class="mover" disabled>${l.info ? "Trecho da avenida: siga pelo Museu ou pelo Acampamento" : "Sem caminho direto desde " + LUGARES[aqui].nome}</button>`;
+    $("painel").innerHTML =
+      `<p class="tipo">${l.tipo}</p><h2>${l.nome}</h2><p>${l.desc}</p>` +
+      (l.avenida ? `<div class="obs">${OBS_AVENIDA}</div>` : "") +
+      (mestra() ? `<div class="nota"><b>Para a mestra:</b> ${l.mestra}</div>` : "") +
+      `<h3>Caminhos daqui</h3><div class="saidas">` +
+      (vizinhosDe(sel).length ? vizinhosDe(sel).map((v) => { const e = achar(sel, v); return `<button data-ir="${v}">${LUGARES[v].nome}${e.tempo ? " (avenida, " + e.tempo / 60 + " min)" : ""}</button>`; }).join("") : `<span style="font-size:.85rem;color:#a89f88">Este trecho faz parte da avenida.</span>`) +
+      `</div>${botao}<p class="trilha">Trilha do grupo: ${trilha.map((t) => LUGARES[t].nome).join(" → ")}</p>`;
+  }
+
+  // ===== Movimento e viagem pela avenida =====
+  function chegar(id) {
+    aqui = id; sel = id; visitados.add(id); trilha.push(id);
+    falar("O grupo chega a " + LUGARES[id].nome + ".", "ok"); desenhar();
+  }
+  const mmss = (ms) => { const t = Math.ceil(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  function fimViagem() { if (viagem) { clearInterval(viagem.id); viagem = null; } $("viagem").classList.remove("aberta"); }
+  function viajar(para, ar) {
+    const total = ar.tempo * 1000, fim = Date.now() + total;
+    $("v-titulo").textContent = ar.nome + ": " + LUGARES[aqui].nome + " → " + LUGARES[para].nome;
+    $("v-texto").textContent = "O caminho pela avenida equivale a " + ar.tempo / 60 + " minutos de interação entre os jogadores. Conversem, planejem e interpretem os personagens. Quando o tempo acabar, o grupo chega.";
+    $("v-chegar").hidden = $("v-cancelar").hidden = !mestra();
+    $("relogio").textContent = mmss(total); $("v-barra").style.width = "0%";
+    $("viagem").classList.add("aberta");
+    viagem = { para, fim, id: setInterval(() => {
+      const resta = Math.max(0, fim - Date.now());
+      $("relogio").textContent = mmss(resta); $("v-barra").style.width = (100 - resta / total * 100) + "%";
+      if (resta <= 0) { const d = viagem.para; fimViagem(); chegar(d); }
+    }, 200) };
+    desenhar();
+  }
+  function mover(id) {
+    if (!podeIr(id)) return falar("Não há caminho direto até lá. Os locais que brilham são as saídas.", "erro");
+    const ar = achar(aqui, id);
+    if (ar && ar.tempo) return viajar(id, ar);
+    chegar(id);
+  }
+  function reiniciar() {
+    fimViagem(); aqui = INICIO; sel = INICIO; visitados = new Set([INICIO]); trilha = [INICIO]; falar(""); desenhar();
+  }
+
+  $("mapa").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && !viagem) { sel = b.dataset.id; falar(""); desenhar(); } });
+  $("painel").addEventListener("click", (e) => {
+    const ir = e.target.closest("[data-ir]"); if (ir) { sel = ir.dataset.ir; falar(""); return desenhar(); }
+    const mv = e.target.closest("[data-mover]"); if (mv && !mv.disabled) mover(mv.dataset.mover);
+  });
+  $("v-chegar").addEventListener("click", () => { const d = viagem && viagem.para; fimViagem(); if (d) chegar(d); });
+  $("v-cancelar").addEventListener("click", () => { fimViagem(); falar("A viagem foi cancelada.", "erro"); desenhar(); });
+  $("modo").addEventListener("change", desenhar);
+  $("reiniciar").addEventListener("click", reiniciar);
+  arte(); montar(); reiniciar();
+})();
+</script>
+</body>
+</html>
